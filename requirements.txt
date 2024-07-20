@@ -1,0 +1,10 @@
+asgiref
+Django
+django-cors-headers
+djangorestframework
+mysqlclient
+google-cloud-storage
+auth0-python
+firebase-admin
+pytz
+sqlparse

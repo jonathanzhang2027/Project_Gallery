@@ -159,10 +159,13 @@ AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
 AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
 # Firebase configuration
-import firebase_admin
-from firebase_admin import credentials, storage
-
-cred = credentials.Certificate(os.path.join(BASE_DIR, os.getenv('FIREBASE_SERVICE_ACCOUNT')))
-firebase_admin.initialize_app(cred, {
-    'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
-})
+try:
+    from firebase_admin import credentials, initialize_app
+    firebase_creds = credentials.Certificate(os.path.join(BASE_DIR, os.getenv('FIREBASE_SERVICE_ACCOUNT')))
+    initialize_app(firebase_creds, {
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
+    })
+except FileNotFoundError:
+    print("Firebase service account file not found. Skipping Firebase initialization.")
+except ImportError:
+    print("firebase_admin module not found. Ensure it is installed.")

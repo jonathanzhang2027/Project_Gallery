@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import firebase_admin
+from firebase_admin import credentials
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -148,24 +150,23 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Adjust as needed for your frontend
 ]
 
-# Google Cloud Storage configuration
-DEFAULT_FILE_STORAGE = 'api.gcs.CustomGoogleCloudStorage'
-GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
-GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-
 # Auth0 configuration
 AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
 AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
 AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
+# Google Cloud Storage configuration
+GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
+GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+
 # Firebase configuration
-try:
-    from firebase_admin import credentials, initialize_app
-    firebase_creds = credentials.Certificate(os.path.join(BASE_DIR, os.getenv('FIREBASE_SERVICE_ACCOUNT')))
-    initialize_app(firebase_creds, {
-        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
-    })
-except FileNotFoundError:
-    print("Firebase service account file not found. Skipping Firebase initialization.")
-except ImportError:
-    print("firebase_admin module not found. Ensure it is installed.")
+FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_SERVICE_ACCOUNT')
+FIREBASE_STORAGE_BUCKET = os.getenv('FIREBASE_STORAGE_BUCKET')
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate(os.path.join(BASE_DIR, FIREBASE_CREDENTIALS_PATH))
+firebase_admin.initialize_app(cred,  {
+    'storageBucket': FIREBASE_STORAGE_BUCKET
+})
+
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'

@@ -1,9 +1,10 @@
+import LoginButton from "../components/LoginButton";
 
 const Login = () => {
   return (
     <div>
       <h1>Login Page</h1>
-      {/* Auth0 login code here */}
+      <LoginButton />
     </div>
   );
 };

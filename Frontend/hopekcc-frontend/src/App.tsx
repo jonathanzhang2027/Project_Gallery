@@ -4,15 +4,39 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import NavBar from "./components/NavBar";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import NewProject from "./pages/NewProject";
 import Project from "./pages/Project";
 import EditProject from "./pages/EditProject";
+import axios from "axios";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const { getAccessTokenSilently } = useAuth0();
+
+  async function callApi() {
+    try {
+      const token = await getAccessTokenSilently();
+      // const response = await axios.get("http://127.0.0.1:8000/", {
+      //   headers: {
+      //     authorization: `Bearer ${token}`,
+      //   },
+      // });
+      // console.log(response.data);
+      console.log(token);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error getting access token or fetching data:",
+          error.message
+        );
+      } else {
+        console.error("An unexpected error occurred");
+      }
+    }
+  }
 
   return (
     <>
@@ -27,26 +51,14 @@ function App() {
           <Route path="*" element={<div>Page Not Found</div>} />
         </Routes>
       </Router>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
+      <button onClick={() => callApi()}> call api </button>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+
       <div className="bg-blue-500 text-white p-4">Tailwind CSS is working!</div>
     </>
   );

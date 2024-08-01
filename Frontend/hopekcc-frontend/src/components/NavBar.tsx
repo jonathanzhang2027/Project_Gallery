@@ -1,18 +1,23 @@
-
 import { Link } from "react-router-dom";
+import LoginButton from "./LoginButton";
+import { useAuth0 } from "@auth0/auth0-react";
+import LogoutButton from "./LogoutButton";
 
 const NavBar = () => {
+  const { isAuthenticated } = useAuth0();
   return (
     <nav style={navStyle}>
       <ul style={ulStyle}>
         <li style={liStyle}>
-          <Link to="/home">Home</Link>
-        </li>
-        <li style={liStyle}>
-          <Link to="/login">Login</Link>
+          <Link to="/">Home</Link>
         </li>
         <li style={liStyle}>
           <Link to="/new-project">New Project</Link>
+        </li>
+        <li style={liStyle}>
+          <LoginButton />
+          <LogoutButton />
+          {/* <Link to="/login">Login</Link> */}
         </li>
       </ul>
     </nav>

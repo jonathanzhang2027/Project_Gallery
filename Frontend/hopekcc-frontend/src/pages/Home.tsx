@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "react-query";
+import { useAuth0 } from "@auth0/auth0-react";
 
 // Define the structure of a project
 interface Project {
@@ -25,7 +26,7 @@ const fetchProjects = async (): Promise<Project[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(dummyProjects);
-    }, 1000); // 1-second delay to simulate loading
+    }, 300); // 0.3-second delay to simulate loading
   });
 };
 
@@ -36,6 +37,7 @@ const fetchProjects = async (): Promise<Project[]> => {
 // };
 
 const Home = () => {
+  const { user, isAuthenticated } = useAuth0();
   const { data, isLoading, isError, error } = useQuery<Project[]>(
     "projects",
     fetchProjects
@@ -60,6 +62,13 @@ const Home = () => {
   return (
     <div>
       <h1>Home Page</h1>
+
+      {isAuthenticated && (
+        <pre style={{ textAlign: "start" }}>
+          {JSON.stringify(user, null, 2)}
+        </pre>
+      )}
+
       <button>
         <Link to="/new-project">Add New Project</Link>
       </button>

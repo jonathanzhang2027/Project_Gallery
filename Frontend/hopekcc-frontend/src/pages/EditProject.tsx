@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef  } from 'react';
+
 const templateFiles = {
   'index.html': `<!DOCTYPE html>
     <html lang="en">
@@ -95,25 +96,91 @@ interface Dictionary<T> {
 interface Files {
   [key: string]: string;
 }
-const AddButton = ({onAddbuttonClick}: {onAddbuttonClick: () => void})=> {
+const AddButton = ({OnAdd}: {OnAdd: () => void})=> {
   
   return (
-    <button className='px-4 py-2 text-black hover:bg-gray-300 mt-2' onClick={onAddbuttonClick}>+</button>
+    <button className='px-4 py-2 text-black hover:bg-gray-300 mt-2' onClick={OnAdd}>+</button>
   );
 
 };
-const FileDisplayButton = ({filename, onFileSelect, isActive}: 
-  {filename: string, onFileSelect: (filename: string) => void, isActive: boolean}) => {
-  
+
+const FileDisplayButton = ({
+  filename,
+  onFileSelect,
+  onRename,
+  isActive
+}: {
+  filename: string,
+  onFileSelect: (filename: string) => void,
+  onRename: (oldName: string, newName: string) => void,
+  isActive: boolean
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState(filename);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (newName && newName !== filename) {
+      onRename(filename, newName);
+    } else {
+      setNewName(filename);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    }
+  };
+
   return (
-    <button
-      className={`px-4 py-2 text-left truncate ${isActive ? 'bg-white' : 'hover:bg-gray-300'}`}
-      onClick={() => onFileSelect(filename)}
+    <div
+      className={`flex-grow px-4 py-2 text-left truncate ${
+        isActive ? 'bg-white' : 'hover:bg-gray-300'
+      }`}
+      onDoubleClick={handleDoubleClick}
     >
-      {filename}
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          className="w-full px-1 py-0 border rounded"
+        />
+      ) : (
+        <button
+          className="w-full text-left"
+          onClick={() => onFileSelect(filename)}
+        >
+          {filename}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const DeleteButton = ({ onDelete }: { onDelete: () => void }) => {
+  return (
+    <button className="px-2 py-1 text-red-600 hover:bg-red-100" onClick={onDelete}>
+      -
     </button>
   );
-}
+};
+
 const CollapseButton = ({onCollapseButtonClick, isCollapsed, collapseDirection}: 
   {onCollapseButtonClick: () => void, isCollapsed: boolean, collapseDirection: string}) => {
   const getCollapseIcon = () => {
@@ -133,21 +200,123 @@ const CollapseButton = ({onCollapseButtonClick, isCollapsed, collapseDirection}:
   );
 }
 
-const FileTabsNavigation = ({ files, activeFile, onFileSelect, onAddFile, isCollapsed }: 
-  { files: Dictionary<string>, activeFile: string, onFileSelect: (filename: string) => void, onAddFile: () => void, isCollapsed: boolean}) => {
-    // {`bg-white transition-all duration-300 ease-in-out ${isEditorCollapsed ? 'w-0 overflow-hidden' : 'w-1/2'}`}
-    return (
-    <div className={`flex flex-col bg-gray-200 transition-all duration-300 ease-in-out ${isCollapsed? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'}`}>
-      
-      {Object.keys(files).map((filename) => (
-        <FileDisplayButton filename={filename} onFileSelect={onFileSelect} isActive={activeFile === filename}/>
-      ))}
-      <AddButton onAddbuttonClick={onAddFile}/>
 
+const FileTabsNavigation = ({
+  files,
+  activeFile,
+  onFileSelect,
+  onAddFile,
+  onDeleteFile,
+  onRenameFile,
+  isCollapsed
+}: {
+  files: Dictionary<string>,
+  activeFile: string,
+  onFileSelect: (filename: string) => void,
+  onAddFile: () => void,
+  onDeleteFile: (filename: string) => void,
+  onRenameFile: (oldName: string, newName: string) => void,
+  isCollapsed: boolean
+}) => {
+  return (
+    <div
+      className={`flex flex-col bg-gray-200 transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'
+      }`}
+    >
+      {Object.keys(files).map((filename) => (
+        <div key={filename} className="flex items-center">
+          <FileDisplayButton
+            filename={filename}
+            onFileSelect={onFileSelect}
+            onRename={onRenameFile}
+            isActive={activeFile === filename}
+          />
+          <DeleteButton onDelete={() => onDeleteFile(filename)} />
+        </div>
+      ))}
+      <AddButton OnAdd={onAddFile} />
     </div>
-    
   );
 };
+
+const ProjectTitle = ({ title, onTitleChange }: { title: string; onTitleChange: (newTitle: string) => void }) => {
+  const [inputWidth, setInputWidth] = useState(0);
+  const measureRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (measureRef.current) {
+      setInputWidth(measureRef.current.offsetWidth);
+    }
+  }, [title]);
+
+  return (
+    <div className="relative inline-block">
+      <span
+        ref={measureRef}
+        className="invisible absolute whitespace-pre px-2"
+        style={{ fontWeight: 'bold', fontSize: '1.5rem' }}
+      >
+        {title || 'Project Title'}
+      </span>
+      <input
+        className="text-2xl font-bold px-2 py-1 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+        style={{ width: `${inputWidth + 20}px` }}  // Add some padding
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        placeholder="Project Title"
+      />
+    </div>
+  );
+};
+
+const DescriptionToggleButton = ({ isEditing, onClick }: { isEditing: boolean; onClick: () => void }) => (
+  <button
+    className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded flex items-center"
+    onClick={onClick}
+  >
+    {isEditing ? (
+      <>
+        <span className="ml-1">Hide Description</span>
+      </>
+    ) : (
+      <>
+        <span className="ml-1">Show Description</span>
+      </>
+    )}
+  </button>
+);
+
+const ProjectDescription = ({ description, onDescriptionChange }: { description: string; onDescriptionChange: (newDescription: string) => void }) => (
+  <textarea
+    className="w-full p-2 border rounded mt-2"
+    value={description}
+    onChange={(e) => onDescriptionChange(e.target.value)}
+    placeholder="Project Description"
+    rows={3}
+  />
+);
+
+const ProjectMetadata = ({ title, description, onTitleChange, onDescriptionChange }: 
+  { title: string, description: string, onTitleChange: (newTitle: string) => void, onDescriptionChange: (newDescription: string) => void }) => {
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+
+  return (
+    <div className="bg-white p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <ProjectTitle title={title} onTitleChange={onTitleChange} />
+        <DescriptionToggleButton 
+          isEditing={isEditingDescription} 
+          onClick={() => setIsEditingDescription(!isEditingDescription)} 
+        />
+      </div>
+      {isEditingDescription && (
+        <ProjectDescription description={description} onDescriptionChange={onDescriptionChange} />
+      )}
+    </div>
+  );
+};
+
 const Editor = ({files, activeFile, onFileChange}: {files: Dictionary<string>, activeFile: string, onFileChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void}) => {
 
   return (
@@ -181,13 +350,15 @@ const Preview = ({ preview, isCollapsed, onNavigate }: { preview: string, isColl
   );
 };
 
+
 const ProjectEditor = () => {
-  const [files, setFiles] = useState<Files>(templateFiles
-    );
+  const [files, setFiles] = useState<Files>(templateFiles);
   const [activeFile, setActiveFile] = useState('index.html');
   const [preview, setPreview] = useState('');
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState(false);
+  const [projectTitle, setProjectTitle] = useState('My Project');
+  const [projectDescription, setProjectDescription] = useState('A simple web project');
 
   useEffect(() => {
     generatePreview();
@@ -245,6 +416,31 @@ const ProjectEditor = () => {
       alert('A file with this name already exists.');
     }
   };
+
+  const deleteFile = (filename: string) => {
+    if (confirm(`Are you sure you want to delete ${filename}?`)) {
+      const newFiles = { ...files };
+      delete newFiles[filename];
+      setFiles(newFiles);
+      if (activeFile === filename) {
+        setActiveFile(Object.keys(newFiles)[0] || '');
+      }
+    }
+  };
+
+  const renameFile = (oldName: string, newName: string) => {
+    if (files[newName]) {
+      alert('A file with this name already exists.');
+      return;
+    }
+    const newFiles = { ...files };
+    newFiles[newName] = newFiles[oldName];
+    delete newFiles[oldName];
+    setFiles(newFiles);
+    if (activeFile === oldName) {
+      setActiveFile(newName);
+    }
+  };
   
   const handleNavigate = (filename: string) => {
     if (files[filename]) {
@@ -254,29 +450,38 @@ const ProjectEditor = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
+      <ProjectMetadata 
+        title={projectTitle}
+        description={projectDescription}
+        onTitleChange={setProjectTitle}
+        onDescriptionChange={setProjectDescription}
+      />
       <div className="flex-grow flex">
         <FileTabsNavigation
           files={files}
           activeFile={activeFile}
           onFileSelect={setActiveFile}
           onAddFile={addNewFile}
-          isCollapsed={isCollapsedFileTab}/>
+          onDeleteFile={deleteFile}
+          onRenameFile={renameFile}
+          isCollapsed={isCollapsedFileTab}
+        />
 
         <CollapseButton
           onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
           isCollapsed={isCollapsedFileTab}
-          collapseDirection="left"/>
+          collapseDirection="left"
+        />
 
         <Editor files={files} activeFile={activeFile} onFileChange={handleFileChange}/>
 
         <CollapseButton
           onCollapseButtonClick={() => setIsCollapsedPreview(!isCollapsedPreview)}
           isCollapsed={isCollapsedPreview}
-          collapseDirection="right"/>
-        
+          collapseDirection="right"
+        />
     
         <Preview preview={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
-        
       </div>
     </div>
   );

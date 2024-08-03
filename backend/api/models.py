@@ -14,7 +14,7 @@ class Project(models.Model):
 class File(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='files')
     file_name = models.CharField(max_length=255)
-    file_url = models.URLField()
+    file_url = models.URLField(max_length=2000)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -6,7 +6,6 @@ import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import NavBar from "./components/NavBar";
-import Login from "./pages/Login";
 import Home from "./pages/Home";
 import NewProject from "./pages/NewProject";
 import Project from "./pages/Project";
@@ -14,7 +13,7 @@ import EditProject from "./pages/EditProject";
 import axios from "axios";
 
 function App() {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, isLoading } = useAuth0();
 
   async function callApi() {
     try {
@@ -38,12 +37,13 @@ function App() {
     }
   }
 
+  if (isLoading) return <div> Loading... </div>;
+
   return (
     <>
       <Router>
         <NavBar />
         <Routes>
-          <Route path="/login" element={<Login />} />
           <Route path="" element={<Home />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/project/:id" element={<Project />} />

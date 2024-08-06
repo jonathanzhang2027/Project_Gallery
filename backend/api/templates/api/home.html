@@ -1,0 +1,20 @@
+<!-- templates/api/home.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Projects</title>
+</head>
+<body>
+    <h1>User Projects</h1>
+    <ul>
+        {% for project in projects %}
+            <li>
+                <h2>{{ project.name }}</h2>
+                <p>{{ project.description }}</p>
+                <a href="{% url 'project_details' project.id %}">Edit details</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

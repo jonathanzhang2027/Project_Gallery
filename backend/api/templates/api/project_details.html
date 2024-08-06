@@ -1,0 +1,51 @@
+<!-- templates/api/project_details.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project Details</title>
+</head>
+<body>
+    <h1>Edit Project Details</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            <label for="id_name">Project Name:</label>
+            <input type="text" name="name" id="id_name" value="{{ project.name }}">
+        </div>
+        <div>
+            <label for="id_description">Project Description:</label>
+            <textarea name="description" id="id_description">{{ project.description }}</textarea>
+        </div>
+        <div>
+            <button type="submit" name="save_changes">Save Changes</button>
+        </div>
+    </form>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h2>Files</h2>
+        <ul>
+            {% for file in files %}
+                <li>
+                    {{ file.file_name }}
+                    <button type="submit" name="delete_file" value="{{ file.id }}">Delete</button>
+                </li>
+            {% endfor %}
+        </ul>
+        <div>
+            <label for="id_upload_file">Upload New File:</label>
+            <input type="file" name="upload_file" id="id_upload_file">
+            <button type="submit">Upload</button>
+        </div>
+    </form>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <button type="submit" name="delete_project">Delete Project</button>
+        </div>
+    </form>
+    <div>
+        <a href="{% url 'home' %}">Back to Projects</a>
+    </div>
+</body>
+</html>

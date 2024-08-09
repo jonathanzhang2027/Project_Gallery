@@ -1,7 +1,7 @@
 import React from 'react';
 import { Files } from './templateFiles';
-import { AddButton, DeleteButton, FileDisplayButton} from './buttons';
-
+import { FileDisplayButton} from './buttons';
+import { FileToolbar } from './FileToolbar';
 interface FileTabsNavigationProps {
   files: Files;
   activeFile: string;
@@ -9,6 +9,7 @@ interface FileTabsNavigationProps {
   onAddFile: () => void;
   onDeleteFile: (filename: string) => void;
   onRenameFile: (oldName: string, newName: string) => void;
+  onUploadFile: () => void;
   isCollapsed: boolean;
 }
 
@@ -19,6 +20,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   onAddFile,
   onDeleteFile,
   onRenameFile,
+  onUploadFile,
   isCollapsed
 }) => {
   return (
@@ -27,6 +29,13 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
         isCollapsed ? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'
       }`}
     >
+      <FileToolbar 
+        onAddFile={onAddFile} 
+        onDeleteFile={onDeleteFile} 
+        onRenameFile={onRenameFile} 
+        activeFile={activeFile} 
+        onUploadFile={onUploadFile}
+       />
       {Object.keys(files).map((filename) => (
         <div key={filename} className="flex items-center">
           <FileDisplayButton
@@ -35,10 +44,8 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
             onRename={onRenameFile}
             isActive={activeFile === filename}
           />
-          <DeleteButton onDelete={() => onDeleteFile(filename)} />
         </div>
       ))}
-      <AddButton OnAdd={onAddFile} />
     </div>
   );
 };

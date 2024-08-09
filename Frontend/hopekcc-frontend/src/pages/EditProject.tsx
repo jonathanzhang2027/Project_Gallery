@@ -101,6 +101,9 @@ const ProjectEditor: React.FC = () => {
     }
   };
 
+  const handleUpload = () => {
+    console.log("uploading files")
+  }
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <ProjectMetadata 
@@ -117,8 +120,8 @@ const ProjectEditor: React.FC = () => {
           onAddFile={addNewFile}
           onDeleteFile={deleteFile}
           onRenameFile={renameFile}
-          isCollapsed={isCollapsedFileTab}
-        />
+          isCollapsed={isCollapsedFileTab} 
+          onUploadFile={handleUpload}        />
 
         <CollapseButton
           onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}

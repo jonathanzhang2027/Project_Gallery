@@ -19,7 +19,7 @@ export const ProjectMetadata: React.FC<ProjectMetadataProps> = ({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   return (
-    <div className="bg-white p-4 mb-4">
+    <div className="bg-white p-4">
       <div className="flex items-center justify-between mb-2">
         <ProjectTitle title={title} onTitleChange={onTitleChange} />
         <DescriptionToggleButton 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { templateFiles, Files } from '../components/projectComponents/templateFiles';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
-import { ProjectMetadata } from '../components/projectComponents/ProjectMetadata';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
 import { CollapseButton } from '../components/projectComponents/buttons';
@@ -106,12 +105,6 @@ const ProjectEditor: React.FC = () => {
   }
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      <ProjectMetadata 
-        title={projectTitle}
-        description={projectDescription}
-        onTitleChange={setProjectTitle}
-        onDescriptionChange={setProjectDescription}
-      />
       <div className="flex-grow flex">
         <FileTabsNavigation
           files={files}
@@ -142,5 +135,7 @@ const ProjectEditor: React.FC = () => {
     </div>
   );
 };
+
+
 
 export default ProjectEditor;

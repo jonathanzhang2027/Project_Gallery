@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
+import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File } from 'lucide-react'; //icons
 // Base ButtonProps interface
 interface ButtonProps {
   onClick: () => void;
@@ -20,6 +20,7 @@ interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'> {
   onFileSelect: (filename: string) => void;
   onRename: (oldName: string, newName: string) => void;
   isActive: boolean;
+  isRenaming: boolean;
 }
 
 // DeleteButton
@@ -49,7 +50,7 @@ interface DescriptionToggleButtonProps extends Omit<ButtonProps, 'onClick'> {
 }
 const Button: React.FC<ButtonProps> = ({ onClick, className = '', children }) => (
   <button
-    className={`px-2 py-1 text-black hover:bg-gray-300  ${className}`}
+    className={`px-1 py-1 text-black hover:bg-gray-300  ${className}`}
     onClick={onClick}
   >
     {children}
@@ -65,11 +66,11 @@ export const CollapseButton: React.FC<CollapseButtonProps> = ({
   const getCollapseIcon = () => {
     switch (collapseDirection) {
       case 'left':
-        return isCollapsed ? '>' : '<';
+        return isCollapsed ? <ArrowRight size={15}/> : <ArrowLeft size={15}/>;
       case 'right':
-        return isCollapsed ? '<' : '>';
+        return isCollapsed ? <ArrowLeft size={15}/> : <ArrowRight size={15}/>;
       default:
-        return isCollapsed ? '<' : '>';
+        return isCollapsed ? <ArrowLeft size={15}/> : <ArrowRight size={15}/>;
     }
   };
 
@@ -83,39 +84,47 @@ export const CollapseButton: React.FC<CollapseButtonProps> = ({
   );
 };
 
+interface FileDisplayButtonProps {
+  filename: string;
+  onFileSelect: (filename: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onCancelRename: () => void;
+  isActive: boolean;
+  isRenaming: boolean;
+  onDoubleClick: () => void;
+}
 
 export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   filename,
   onFileSelect,
   onRename,
-  isActive
+  onCancelRename,
+  isActive,
+  isRenaming,
+  onDoubleClick
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(filename);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
+    if ((isRenaming) && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [isEditing]);
-
-  const handleDoubleClick = () => {
-    setIsEditing(true);
-  };
+  }, [isRenaming]);
 
   const handleBlur = () => {
-    setIsEditing(false);
     if (newName && newName !== filename) {
       onRename(filename, newName);
     } else {
-      setNewName(filename);
+      onCancelRename();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleBlur();
+    } else if (e.key === 'Escape') {
+      onCancelRename();
     }
   };
 
@@ -124,9 +133,9 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
       className={`flex-grow px-4 py-2 text-left truncate ${
         isActive ? 'bg-white' : 'hover:bg-gray-300'
       }`}
-      onDoubleClick={handleDoubleClick}
+      onDoubleClick={onDoubleClick}
     >
-      {isEditing ? (
+      {isRenaming ? (
         <input
           ref={inputRef}
           type="text"
@@ -137,12 +146,12 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
           className="w-full px-1 py-0 border rounded"
         />
       ) : (
-        <Button
+        <button
           onClick={() => onFileSelect(filename)}
           className="w-full text-left hover:bg-transparent hover:text-current"
-          >
+        >
           {filename}
-        </Button>
+        </button>
       )}
     </div>
   );
@@ -154,7 +163,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete , className
     onClick={onDelete}
     className={`${className}`}
   >
-    -
+    <Trash/>
   </Button>
 );
 
@@ -164,19 +173,19 @@ export const AddButton: React.FC<AddButtonProps> = ({ OnAdd , className = ''}) =
     onClick={OnAdd}
     className={`${className}`}
   >
-    +
+    <File/>
   </Button>
 );
 
 export const RenameButton: React.FC<RenameButtonProps> = ({ onRename , className = '' }) => (
   <Button onClick={onRename} className={`${className}`}>
-    R
+    <Edit/>
   </Button>
 );
 
 export const UploadButton: React.FC<UploadButtonProps> = ({ onUpload, className = ''}) => (
   <Button onClick={onUpload} className={`${className}`}>
-    ^
+    <Upload/>
   </Button>
 );
 

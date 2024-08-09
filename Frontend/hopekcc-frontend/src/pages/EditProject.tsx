@@ -4,15 +4,18 @@ import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavi
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
 import { CollapseButton } from '../components/projectComponents/buttons';
-
+import { ProjectNavBar } from '../components/NavBar';
+import { ProjectDescription } from '../components/projectComponents/projectMeta/ProjectDescription';
 const ProjectEditor: React.FC = () => {
   const [files, setFiles] = useState<Files>(templateFiles);
+  const [description, setDescription] = useState<string>('Descriptions');
   const [activeFile, setActiveFile] = useState('index.html');
   const [preview, setPreview] = useState('');
+  const [isEditing, setIsEditing] = useState(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState(false);
-  const [projectTitle, setProjectTitle] = useState('My Project');
-  const [projectDescription, setProjectDescription] = useState('A simple web project');
+  const [isCollapsedDesc, setIsCollapsedDesc] = useState(true);
+
 
   useEffect(() => {
     generatePreview();
@@ -103,8 +106,10 @@ const ProjectEditor: React.FC = () => {
   const handleUpload = () => {
     console.log("uploading files")
   }
-  return (
-    <div className="flex flex-col h-screen bg-gray-100">
+
+  const EditorMode = () => {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
         <FileTabsNavigation
           files={files}
@@ -130,9 +135,27 @@ const ProjectEditor: React.FC = () => {
           collapseDirection="right"
         />
     
-        <Preview preview={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+        <Preview isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)} previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
       </div>
     </div>
+    )
+  }
+  const ViewMode = () => {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100">
+      <div className="flex-grow flex">
+        <Preview  isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)}previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+      </div>
+    </div>
+    )
+  }
+  return (
+    <>
+    <ProjectNavBar isEditing={isEditing} title={''} modifiedTime={''} Description={''} 
+      onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
+    {isCollapsedDesc? <> </>: <ProjectDescription description={description} onDescriptionChange={setDescription}/>}
+    {isEditing ? <EditorMode/> : <ViewMode/>}
+    </>
   );
 };
 

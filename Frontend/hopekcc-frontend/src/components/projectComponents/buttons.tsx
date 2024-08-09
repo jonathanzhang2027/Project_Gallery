@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File } from 'lucide-react'; //icons
+import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File, Eye, Download, ZoomIn, ZoomOut} from 'lucide-react'; //icons
 // Base ButtonProps interface
 interface ButtonProps {
   onClick: () => void;
@@ -23,32 +23,23 @@ interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'> {
   isRenaming: boolean;
 }
 
-// DeleteButton
-interface DeleteButtonProps extends Omit<ButtonProps, 'onClick'> {
-  onDelete: () => void;
-}
-
-// AddButton
-interface AddButtonProps extends Omit<ButtonProps, 'onClick'> {
-  OnAdd: () => void;
-}
-
-// RenameButton
-interface RenameButtonProps extends Omit<ButtonProps, 'onClick'> {
-  onRename: () => void;
-}
-
-// UploadButton
-interface UploadButtonProps extends Omit<ButtonProps, 'onClick'> {
-  onUpload: () => void;
-}
-
 // DescriptionToggleButton
-interface DescriptionToggleButtonProps extends Omit<ButtonProps, 'onClick'> {
+interface EditingButtonProps extends Omit<ButtonProps, 'onClick'> {
   isEditing: boolean;
   onClick: () => void;
 }
-const Button: React.FC<ButtonProps> = ({ onClick, className = '', children }) => (
+
+interface FileDisplayButtonProps {
+  filename: string;
+  onFileSelect: (filename: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onCancelRename: () => void;
+  isActive: boolean;
+  isRenaming: boolean;
+  onDoubleClick: () => void;
+}
+
+export const Button: React.FC<ButtonProps> = ({ onClick, className = '', children }) => (
   <button
     className={`px-1 py-1 text-black hover:bg-gray-300  ${className}`}
     onClick={onClick}
@@ -83,16 +74,6 @@ export const CollapseButton: React.FC<CollapseButtonProps> = ({
     </Button>
   );
 };
-
-interface FileDisplayButtonProps {
-  filename: string;
-  onFileSelect: (filename: string) => void;
-  onRename: (oldName: string, newName: string) => void;
-  onCancelRename: () => void;
-  isActive: boolean;
-  isRenaming: boolean;
-  onDoubleClick: () => void;
-}
 
 export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   filename,
@@ -130,7 +111,7 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
 
   return (
     <div
-      className={`flex-grow px-4 py-2 text-left truncate ${
+      className={`flex flex-grow px-4 py-2 text-left truncate ${
         isActive ? 'bg-white' : 'hover:bg-gray-300'
       }`}
       onDoubleClick={onDoubleClick}
@@ -148,7 +129,7 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
       ) : (
         <button
           onClick={() => onFileSelect(filename)}
-          className="w-full text-left hover:bg-transparent hover:text-current"
+          className="w-full text-left hover:bg-transparent hover:text-current flex items-center"
         >
           {filename}
         </button>
@@ -158,9 +139,9 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
 };
 
 
-export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete , className = ''}) => (
+export const DeleteButton: React.FC<ButtonProps> = ({ onClick , className = ''}) => (
   <Button
-    onClick={onDelete}
+    onClick={onClick}
     className={`${className}`}
   >
     <Trash/>
@@ -168,32 +149,40 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete , className
 );
 
 
-export const AddButton: React.FC<AddButtonProps> = ({ OnAdd , className = ''}) => (
+export const AddButton: React.FC<ButtonProps> = ({ onClick , className = ''}) => (
   <Button
-    onClick={OnAdd}
+    onClick={onClick}
     className={`${className}`}
   >
     <File/>
   </Button>
 );
 
-export const RenameButton: React.FC<RenameButtonProps> = ({ onRename , className = '' }) => (
-  <Button onClick={onRename} className={`${className}`}>
+export const RenameButton: React.FC<ButtonProps> = ({ onClick , className = '' }) => (
+  <Button onClick={onClick} className={`${className}`}>
     <Edit/>
   </Button>
 );
 
-export const UploadButton: React.FC<UploadButtonProps> = ({ onUpload, className = ''}) => (
-  <Button onClick={onUpload} className={`${className}`}>
+export const UploadButton: React.FC<ButtonProps> = ({ onClick, className = ''}) => (
+  <Button onClick={onClick} className={`${className}`}>
     <Upload/>
   </Button>
 );
 
-export const DescriptionToggleButton: React.FC<DescriptionToggleButtonProps> = ({ isEditing, onClick }) => (
+
+export const DescriptionToggleButton: React.FC<EditingButtonProps> = ({ isEditing, onClick }) => (
   <Button
     onClick={onClick}
     className="bg-gray-200 hover:bg-gray-300"
   >
     {isEditing ? 'Hide Description' : 'Show Description'}
+  </Button>
+);
+
+
+export const SwitchViewButton: React.FC<EditingButtonProps> = ({ isEditing, onClick, className = ''}) => (
+  <Button onClick={onClick} className={`${className}`}>
+    {isEditing ? <Eye/> : <Edit/>}
   </Button>
 );

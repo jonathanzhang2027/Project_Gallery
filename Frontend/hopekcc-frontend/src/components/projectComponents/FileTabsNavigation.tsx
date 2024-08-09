@@ -13,6 +13,14 @@ interface FileTabsNavigationProps {
   isCollapsed: boolean;
 }
 
+interface FileToolbarProps {
+  activeFile: string;
+  onAddFile: () => void;
+  onDeleteFile: () => void;
+  onRenameClick: () => void;
+  onUploadFile: () => void;
+}
+
 export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   files,
   activeFile,
@@ -59,7 +67,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
     <div
       ref={navigationRef}
       className={`flex flex-col bg-gray-200 transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-0 overflow-hidden' : 'w-64 overflow-y-auto'
+        isCollapsed ? 'w-0 overflow-hidden' : 'w-1/4 overflow-y-auto'
       }`}
     >
       <FileToolbar 
@@ -86,14 +94,6 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   );
 };
 
-interface FileToolbarProps {
-  activeFile: string;
-  onAddFile: () => void;
-  onDeleteFile: () => void;
-  onRenameClick: () => void;
-  onUploadFile: () => void;
-}
-
 export const FileToolbar: React.FC<FileToolbarProps> = ({
   onAddFile,
   onDeleteFile,
@@ -101,11 +101,11 @@ export const FileToolbar: React.FC<FileToolbarProps> = ({
   onUploadFile,
 }) => {
   return (
-    <div className='text-black bg-gray-300'>
-      <AddButton OnAdd={onAddFile} className='hover:bg-gray-500'/>
-      <UploadButton onUpload={onUploadFile} className='hover:bg-gray-500'/>        
-      <DeleteButton onDelete={onDeleteFile} className='hover:bg-gray-500'/>
-      <RenameButton onRename={onRenameClick} className='hover:bg-gray-500'/>
+    <div className='text-black bg-gray-300 px-1 flex justify-start'>
+      <AddButton onClick={onAddFile} className='hover:bg-gray-500'/>
+      <UploadButton onClick={onUploadFile} className='hover:bg-gray-500'/>        
+      <DeleteButton onClick={onDeleteFile} className='hover:bg-gray-500'/>
+      <RenameButton onClick={onRenameClick} className='hover:bg-gray-500'/>
     </div>
   );
 };

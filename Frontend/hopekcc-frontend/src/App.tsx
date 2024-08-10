@@ -14,7 +14,6 @@ import axios from "axios";
 
 function App() {
   const { getAccessTokenSilently, isLoading } = useAuth0();
-
   async function callApi() {
     try {
       const token = await getAccessTokenSilently();

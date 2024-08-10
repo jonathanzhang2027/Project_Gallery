@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { templateFiles, Files } from '../components/projectComponents/templateFiles';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
-import { ProjectMetadata } from '../components/projectComponents/ProjectMetadata';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
 import { CollapseButton } from '../components/projectComponents/buttons';
-
+import { ProjectNavBar } from '../components/NavBar';
+import { ProjectDescription } from '../components/projectComponents/projectMeta/ProjectDescription';
 const ProjectEditor: React.FC = () => {
   const [files, setFiles] = useState<Files>(templateFiles);
+  const [title, setTitle] = useState<string>('My Project');
+  const [description, setDescription] = useState<string>('Descriptions');
+  const [modifiedTime, setModifiedTime] = useState<string>('2024')
   const [activeFile, setActiveFile] = useState('index.html');
   const [preview, setPreview] = useState('');
+  const [isEditing, setIsEditing] = useState(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState(false);
-  const [projectTitle, setProjectTitle] = useState('My Project');
-  const [projectDescription, setProjectDescription] = useState('A simple web project');
+  const [isCollapsedDesc, setIsCollapsedDesc] = useState(true);
+
 
   useEffect(() => {
     generatePreview();
@@ -59,7 +63,6 @@ const ProjectEditor: React.FC = () => {
     const updatedFiles = { ...files, [activeFile]: e.target.value };
     setFiles(updatedFiles);
   };
-
   const addNewFile = () => {
     const fileName = prompt('Enter the name of the new file:');
     if (fileName && !files[fileName]) {
@@ -94,21 +97,26 @@ const ProjectEditor: React.FC = () => {
       setActiveFile(newName);
     }
   };
-  
+  const handleRenameTitle = (oldTitle:string, newTitle:string) => {
+    // if (!newTitle && oldTitle === newTitle){
+    //   return;
+    // }
+    setTitle(newTitle)
+    console.log(oldTitle, newTitle)
+  }
   const handleNavigate = (filename: string) => {
     if (files[filename]) {
       setActiveFile(filename);
     }
   };
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <ProjectMetadata 
-        title={projectTitle}
-        description={projectDescription}
-        onTitleChange={setProjectTitle}
-        onDescriptionChange={setProjectDescription}
-      />
+  const handleUpload = () => {
+    console.log("uploading files")
+  }
+
+  const EditorMode = () => {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
         <FileTabsNavigation
           files={files}
@@ -117,8 +125,8 @@ const ProjectEditor: React.FC = () => {
           onAddFile={addNewFile}
           onDeleteFile={deleteFile}
           onRenameFile={renameFile}
-          isCollapsed={isCollapsedFileTab}
-        />
+          isCollapsed={isCollapsedFileTab} 
+          onUploadFile={handleUpload}        />
 
         <CollapseButton
           onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
@@ -134,10 +142,30 @@ const ProjectEditor: React.FC = () => {
           collapseDirection="right"
         />
     
-        <Preview preview={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+        <Preview isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)} previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
       </div>
     </div>
+    )
+  }
+  const ViewMode = () => {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100">
+      <div className="flex-grow flex">
+        <Preview  isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)}previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+      </div>
+    </div>
+    )
+  }
+  return (
+    <>
+    <ProjectNavBar isEditing={isEditing} title={title} onTitleChange={handleRenameTitle} modifiedTime={modifiedTime} Description={description} 
+      onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
+    {isCollapsedDesc? <> </>: <ProjectDescription description={description} onDescriptionChange={setDescription}/>}
+    {isEditing ? <EditorMode/> : <ViewMode/>}
+    </>
   );
 };
+
+
 
 export default ProjectEditor;

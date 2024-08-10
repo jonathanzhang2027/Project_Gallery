@@ -47,22 +47,11 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
     };
   }, []);
 
-  const handleRenameClick = () => {
-    setIsRenaming(true);
-  };
-
   const handleRename = (oldName: string, newName: string) => {
     onRenameFile(oldName, newName);
     setIsRenaming(false);
   };
 
-  const handleCancelRename = () => {
-    setIsRenaming(false);
-  };
-
-  const handleDoubleClick = () => {
-    setIsRenaming(true);
-  }
   return (
     <div
       ref={navigationRef}
@@ -73,7 +62,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
       <FileToolbar 
         onAddFile={onAddFile} 
         onDeleteFile={() => onDeleteFile(activeFile)} 
-        onRenameClick={handleRenameClick}
+        onRenameClick={() => setIsRenaming(true)}
         activeFile={activeFile} 
         onUploadFile={onUploadFile}
       />
@@ -83,8 +72,8 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
             filename={filename}
             onFileSelect={onFileSelect}
             onRename={handleRename}
-            onCancelRename={handleCancelRename}
-            onDoubleClick={handleDoubleClick}
+            onCancelRename={() => setIsRenaming(false)}
+            onDoubleClick={() => setIsRenaming(true)}
             isActive={activeFile === filename}
             isRenaming={activeFile === filename && isRenaming}
           />

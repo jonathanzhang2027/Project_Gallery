@@ -3,7 +3,8 @@ import LoginButton from "./LoginButton";
 import { useAuth0 } from "@auth0/auth0-react";
 import LogoutButton from "./LogoutButton";
 import { ArrowLeft, Edit, FileText, Eye } from 'lucide-react';
-
+import { TitleDisplayButton } from "./projectComponents/buttons";
+import { useState } from "react";
 
 export const NavBar = () => {
   const { isAuthenticated } = useAuth0();
@@ -52,8 +53,8 @@ const liStyle = {
 };
 
 
-export const ProjectNavBar = ({onSwitchView, onCollapseDesc, isEditing,  title, modifiedTime}
-  : {onCollapseDesc:() => void, onSwitchView:() => void; 
+export const ProjectNavBar = ({onSwitchView, onCollapseDesc, onTitleChange, isEditing,  title, modifiedTime}
+  : {onCollapseDesc:() => void, onSwitchView:() => void; onTitleChange:(oldTitle:string, newTitle:string) => void; 
     isEditing:boolean, title: string, modifiedTime: string, Description: string }) => {
   const linkStyle = (path: string) => ({
     textDecoration: location.pathname === path ? "underline" : "none",
@@ -63,6 +64,8 @@ export const ProjectNavBar = ({onSwitchView, onCollapseDesc, isEditing,  title, 
     justifyContent: "space-between",
     marginRight: "2rem",
   });
+  const [isEditingTitle, setEditingTitle] = useState(false);
+
   return (
     <nav style={navStyle}>
       <ul style={ulStyle}>
@@ -81,13 +84,18 @@ export const ProjectNavBar = ({onSwitchView, onCollapseDesc, isEditing,  title, 
           </button>
         </li>
         <li style={liStyle}>
+          <TitleDisplayButton 
+          title={title} onRename={onTitleChange}
+          onClick={() => setEditingTitle(true)}  onCancelRename={() => setEditingTitle(false)}
+           isRenaming={isEditingTitle}/>
+        </li>
+        <li style={liStyle}>
           <button onClick={onCollapseDesc}>
             <FileText/> Description
         </button>
         </li>
         <li style={liStyle}>
           <div>
-            <h3>{title}</h3>
             <p>Last Modified: {modifiedTime}</p>
           </div>
         </li>

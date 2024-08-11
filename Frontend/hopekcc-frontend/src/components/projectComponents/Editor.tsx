@@ -11,7 +11,7 @@ export const Editor: React.FC<EditorProps> = ({ files, activeFile, onFileChange 
   return (
     <textarea
       className="w-full h-full p-2 font-mono text-sm resize-none"
-      value={files[activeFile] || ''}
+      value={files[activeFile]?.content || ''}
       onChange={onFileChange}
     />
   );

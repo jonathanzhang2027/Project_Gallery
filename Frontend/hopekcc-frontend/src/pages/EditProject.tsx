@@ -1,33 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { templateFiles, Files } from '../components/projectComponents/templateFiles';
+import { FileData, Files } from '../components/projectComponents/templateFiles';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
 import { CollapseButton } from '../components/projectComponents/buttons';
 import { ProjectNavBar } from '../components/NavBar';
 import { ProjectDescription } from '../components/projectComponents/projectMeta/ProjectDescription';
+import axios from 'axios';
+
+
+interface ProjectData {
+  id: number;
+  project_name: string;
+  project_description: string;
+  files: FileData[];
+}
+
 const ProjectEditor: React.FC = () => {
-  const [files, setFiles] = useState<Files>(templateFiles);
-  const [title, setTitle] = useState<string>('My Project');
-  const [description, setDescription] = useState<string>('Descriptions');
+  const [files, setFiles] = useState<Files>({});
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+
   const [modifiedTime, setModifiedTime] = useState<string>('2024')
   const [activeFile, setActiveFile] = useState('index.html');
-  const [preview, setPreview] = useState('');
-  const [isEditing, setIsEditing] = useState(true);
-  const [isCollapsedFileTab, setIsCollapsedFileTab] = useState(false);
-  const [isCollapsedPreview, setIsCollapsedPreview] = useState(false);
-  const [isCollapsedDesc, setIsCollapsedDesc] = useState(true);
+  const [preview, setPreview] = useState<string>('');
+  const [isEditing, setIsEditing] = useState<boolean>(true);
+  const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);
+  const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
+  const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
 
+
+  useEffect(() => {
+    fetchProjectData();
+  }, []);
 
   useEffect(() => {
     generatePreview();
   }, [files, activeFile]);
 
+
+
+  // fetch project details when component mounts
+  const fetchProjectData = async () => {
+    console.log("Fetching project data...");
+
+    try {
+      const response = await fetch('http://localhost:8000/api/project_details/9/'); // Temporary
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data : ProjectData  = await response.json();
+      console.log('Raw Data:', data);
+      
+      setTitle(data.project_name);
+      setDescription(data.project_description);
+      
+      const fileContents: Files = {};
+      data.files.forEach(file => {
+        fileContents[file.file_name] = file;
+      });
+
+      setActiveFile(data.files[0]?.file_name || '');
+
+      setFiles(fileContents);
+      console.log(`Fetched project data: ${data.project_name} ${data.project_description}`);
+
+
+    } catch (error) {
+      console.error('Error fetching project data:', error);
+    }
+  };
+
   const generatePreview = () => {
-    const htmlContent = files[activeFile] || '';
-    const cssContent = files['styles.css'] || '';
+    const htmlContent = files[activeFile]?.content || '';
+    const cssContent = files['styles.css']?.content || '';
     const jsFiles = Object.keys(files).filter(file => file.endsWith('.js'));
-    const jsContent = jsFiles.map(file => files[file]).join('\n');
+    const jsContent = jsFiles.map(file => files[file].content).join('\n');
 
     const combinedCode = `
       <!DOCTYPE html>
@@ -60,27 +107,40 @@ const ProjectEditor: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const updatedFiles = { ...files, [activeFile]: e.target.value };
+    const updatedFiles = { ...files, [activeFile]: { ...files[activeFile], content: e.target.value } };
     setFiles(updatedFiles);
   };
+
   const addNewFile = () => {
     const fileName = prompt('Enter the name of the new file:');
     if (fileName && !files[fileName]) {
-      setFiles({ ...files, [fileName]: '' });
+      const newFile: FileData = { id: 0, file_name: fileName, content: '' }; // TEMPORARY
+      setFiles({ ...files, [fileName]: newFile });
       setActiveFile(fileName);
     } else if (fileName !== null && files[fileName]) {
       alert('A file with this name already exists.');
     }
   };
 
-  const deleteFile = (filename: string) => {
+  const deleteFile = async (fileId: number, filename: string) => {
     if (confirm(`Are you sure you want to delete ${filename}?`)) {
-      const newFiles = { ...files };
-      delete newFiles[filename];
-      setFiles(newFiles);
-      if (activeFile === filename) {
-        setActiveFile(Object.keys(newFiles)[0] || '');
-      }
+      try {
+        const projectId = 9; // replace with actual project id not just "9"
+        const url = `http://localhost:8000/api/delete_file/${projectId}/${fileId}/`;
+        console.log(`Deleting file using URL: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete file: ${response.statusText}`);
+        }
+
+        fetchProjectData();
+    } catch (error) {
+        console.error('Error deleting file:', error);
+    }
     }
   };
 

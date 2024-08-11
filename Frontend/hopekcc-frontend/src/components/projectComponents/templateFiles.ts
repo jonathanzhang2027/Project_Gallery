@@ -1,7 +1,13 @@
+export interface FileData {
+  id: number;
+  file_name: string;
+  content: string;
+};
 export interface Files {
-    [key: string]: string;
-  }
+    [key: string]: FileData;
+  };
   
+  /*
   export const templateFiles: Files = {
     'index.html': `<!DOCTYPE html>
       <html lang="en">
@@ -92,3 +98,5 @@ export interface Files {
   
     console.log('Current time:', getCurrentTime());`,
   };
+
+  */

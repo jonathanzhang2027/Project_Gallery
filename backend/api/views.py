@@ -5,9 +5,32 @@ from .forms import ProjectForm, FileForm
 from .models import Project, File
 from django.contrib.auth.models import User 
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import JsonResponse
+import firebase_admin
 from firebase_admin import storage
 import requests
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def delete_file(request, project_id, file_id):
+    project = get_object_or_404(Project, id=project_id)
+    file = get_object_or_404(File, id=file_id, project=project)
+    
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+    
+    # Delete the file from Google Cloud Storage
+    bucket = storage.bucket()
+    file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0]  # Extract path
+    blob = bucket.blob(file_path)
+    blob.delete()  # This deletes the file from Google Cloud Storage
+    
+    # Delete the file record from the database
+    file.delete()
+    
+    return JsonResponse({'success': True})
 
 
 def create_project(request):
@@ -39,12 +62,77 @@ def upload_file(request, project_id):
     return render(request, 'api/upload.html', {'project': project})
 
 
-def user_projects(request):
+def fetch_user_projects(request):
     # Placeholder for Auth0 user check
     temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check
     projects = Project.objects.filter(user=temp_user)
     return render(request, 'api/home.html', {'projects': projects})
 
+
+
+def get_project_details(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+
+    files = project.files.all()
+    files_data = []
+
+    bucket = storage.bucket()
+
+    for file in files:
+        file_content = None
+        # Extract the path relative to the bucket (assuming file.file_url contains the full URL)
+        file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0]  # Extract path after bucket name
+
+        # Get a blob reference to the file
+        blob = bucket.blob(file_path)
+
+        # Download file content as a string
+        if blob.exists():
+            file_content = blob.download_as_text()
+
+            files_data.append({
+                'id': file.id,
+                'file_name': file.file_name,
+                'content': file_content,
+            })
+
+    project_data = {
+        'id': project.id,
+        'project_name': project.name,
+        'project_description': project.description,
+        'files': files_data
+    }
+
+    return JsonResponse(project_data)
+
+@csrf_exempt
+def delete_file(request, project_id, file_id):
+    project = get_object_or_404(Project, id=project_id)
+    file = get_object_or_404(File, id=file_id, project=project)
+    
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+    
+    # Delete the file from Google Cloud Storage
+    bucket = storage.bucket()
+    file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0]  # Extract path
+    blob = bucket.blob(file_path)
+    blob.delete()  # This deletes the file from Google Cloud Storage
+    
+    # Delete the file record from the database
+    file.delete()
+    
+    return JsonResponse({'success': True})
+
+
+# --------------------------- for testing only ---------------------------
 
 def edit_project_details(request, project_id):
     project = get_object_or_404(Project, id=project_id)
@@ -80,24 +168,3 @@ def edit_project_details(request, project_id):
 
     form = ProjectForm(instance=project)
     return render(request, 'api/edit_project_details.html', {'project': project, 'files': files, 'form': form})
-
-'''
-def render_html_file(request, project_id, file_id):
-    project = get_object_or_404(Project, id=project_id)
-
-    # Placeholder for Auth0 user check
-    temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check
-    if project.user != temp_user:
-        return render(request, 'api/error.html', {'message': 'Unauthorized action'})
-    
-    file = get_object_or_404(File, id=file_id)
-    if not file.file_name.endswith('.html'):
-        return render(request, 'api/error.html', {'message': 'File is not an HTML file'})
-    
-    response = requests.get(file.file_url)
-    if response.status_code == 200:
-        file_content = response.text
-        return HttpResponse(file_content)
-    else:
-        return render(request, 'api/error.html', {'message': 'Could not retrieve file content'})
-'''

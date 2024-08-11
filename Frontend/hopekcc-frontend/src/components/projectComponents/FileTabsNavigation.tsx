@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Files } from './templateFiles';
 import { FileDisplayButton, AddButton, DeleteButton, RenameButton, UploadButton } from './buttons';
 
+
+
 interface FileTabsNavigationProps {
   files: Files;
   activeFile: string;
   onFileSelect: (filename: string) => void;
   onAddFile: () => void;
-  onDeleteFile: (filename: string) => void;
+  onDeleteFile: (fileId: number, filename: string) => void;
   onRenameFile: (oldName: string, newName: string) => void;
   onUploadFile: () => void;
   isCollapsed: boolean;
@@ -20,6 +22,7 @@ interface FileToolbarProps {
   onRenameClick: () => void;
   onUploadFile: () => void;
 }
+
 
 export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   files,
@@ -52,6 +55,8 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
     setIsRenaming(false);
   };
 
+  const activeFileId = files[activeFile]?.id || null;  // Get the ID of the active file
+
   return (
     <div
       ref={navigationRef}
@@ -61,7 +66,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
     >
       <FileToolbar 
         onAddFile={onAddFile} 
-        onDeleteFile={() => onDeleteFile(activeFile)} 
+        onDeleteFile={() => onDeleteFile(activeFileId!, activeFile)} 
         onRenameClick={() => setIsRenaming(true)}
         activeFile={activeFile} 
         onUploadFile={onUploadFile}

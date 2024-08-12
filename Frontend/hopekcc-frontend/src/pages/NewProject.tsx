@@ -1,4 +1,5 @@
 import React, { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface InputFieldProps {
   id: string;
@@ -60,18 +61,48 @@ const Button: React.FC<ButtonProps> = ({ type, onClick, className, children }) =
   </button>
 );
 
-interface NewProjectProps {
-  onCreateProject: (projectName: string, projectDescription: string) => void;
-  onCancel: () => void;
-}
 
-const NewProject: React.FC<NewProjectProps> = ({ onCreateProject, onCancel }) => {
+const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onCreateProject(projectName, projectDescription);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/create_project/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: projectName,
+          description: projectDescription,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error creating project:', errorData);
+        // Handle form errors, e.g., show error messages
+        return;
+      }
+  
+      const data = await response.json();
+      console.log('Project created successfully with ID:', data.project_id);
+      // Handle success, e.g., redirect to the project's detail page or show a success message
+
+      navigate(`/edit-project/${data.project_id}`)
+  
+    } catch (error) {
+      console.error('Network error:', error);
+      // Handle network errors, e.g., show a notification
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/'); // Navigate to the home page
   };
 
   return (
@@ -95,7 +126,7 @@ const NewProject: React.FC<NewProjectProps> = ({ onCreateProject, onCancel }) =>
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
-              onClick={onCancel}
+              onClick={handleCancel}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
             >
               Cancel

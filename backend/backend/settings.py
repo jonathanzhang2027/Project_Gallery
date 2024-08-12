@@ -147,7 +147,7 @@ REST_FRAMEWORK = {
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5174",  # Adjust as needed for your frontend
+    "http://localhost:5173",  # Adjust as needed for your frontend
 ]
 
 # Auth0 configuration

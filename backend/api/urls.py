@@ -8,5 +8,6 @@ urlpatterns = [
     path('project_details/<int:project_id>/', get_project_details, name='get_project_details'),
     path('delete_file/<int:project_id>/<int:file_id>/', delete_file, name='delete_file'),
     
+    
     path('edit_project_details/<int:project_id>/', edit_project_details, name='edit_project_details'), # for testing purposes
 ]

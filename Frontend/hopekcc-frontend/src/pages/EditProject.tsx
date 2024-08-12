@@ -6,7 +6,7 @@ import { Preview } from '../components/projectComponents/Preview';
 import { CollapseButton } from '../components/projectComponents/buttons';
 import { ProjectNavBar } from '../components/NavBar';
 import { ProjectDescription } from '../components/projectComponents/projectMeta/ProjectDescription';
-import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 
 interface ProjectData {
@@ -17,6 +17,7 @@ interface ProjectData {
 }
 
 const ProjectEditor: React.FC = () => {
+  const { id: projectId } = useParams<{ id: string }>();
   const [files, setFiles] = useState<Files>({});
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -32,7 +33,7 @@ const ProjectEditor: React.FC = () => {
 
   useEffect(() => {
     fetchProjectData();
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     generatePreview();
@@ -42,14 +43,12 @@ const ProjectEditor: React.FC = () => {
 
   // fetch project details when component mounts
   const fetchProjectData = async () => {
-    console.log("Fetching project data...");
 
     try {
-      const response = await fetch('http://localhost:8000/api/project_details/9/'); // Temporary
+      const response = await fetch(`http://127.0.0.1:8000/api/project_details/${projectId}/`); // Temporary
       if (!response.ok) throw new Error('Network response was not ok');
 
       const data : ProjectData  = await response.json();
-      console.log('Raw Data:', data);
       
       setTitle(data.project_name);
       setDescription(data.project_description);
@@ -125,7 +124,6 @@ const ProjectEditor: React.FC = () => {
   const deleteFile = async (fileId: number, filename: string) => {
     if (confirm(`Are you sure you want to delete ${filename}?`)) {
       try {
-        const projectId = 9; // replace with actual project id not just "9"
         const url = `http://localhost:8000/api/delete_file/${projectId}/${fileId}/`;
         console.log(`Deleting file using URL: ${url}`);
         

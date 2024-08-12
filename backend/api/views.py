@@ -10,7 +10,9 @@ import json
 import firebase_admin
 from firebase_admin import storage
 import requests
+from .utils import get_user_id_from_request
 from django.views.decorators.csrf import csrf_exempt
+
 
 @csrf_exempt
 def create_project(request): # CONNECTED TO FRONTEND CREATE PROJECT PAGE
@@ -45,12 +47,41 @@ def upload_file(request, project_id): # NEEDS CONNECTING TO FRONTEND CODE EDITOR
     return render(request, 'api/upload.html', {'project': project})
 
 
-def fetch_user_projects(request):
+
+# # listing user projects api endpoint
+# def list_user_projects(request):
+#     if request.method == 'GET':
+#         auth0_user_id = get_user_id_from_request(request)
+
+#         if not auth0_user_id:
+#             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+
+#         # Retrieve all projects
+#         projects = Project.objects.filter(auth0_user_id=auth0_user_id)
+#         projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at'))
+        
+#         return JsonResponse({'projects': projects_data}, safe=False, status=200)
+#     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+def list_user_projects(request):
+    if request.method == 'GET':
+        # Retrieve all projects
+        projects = Project.objects.all()
+        projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at'))
+        
+        return JsonResponse({'projects': projects_data}, safe=False, status=200)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+
+
+# for testing backend view only
+def display_user_projects_home(request):
     # Placeholder for Auth0 user check
     temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check
     projects = Project.objects.filter(user=temp_user)
     return render(request, 'api/home.html', {'projects': projects})
-
 
 
 def get_project_details(request, project_id): # CONNECTED TO FRONTEND CODE EDITOR

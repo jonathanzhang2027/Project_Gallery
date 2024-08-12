@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "react-query";
 import { useAuth0 } from "@auth0/auth0-react";
-
+import UserInfo from "../components/UserInfo";
 // Define the structure of a project
 interface Project {
   id: string;
@@ -80,17 +80,14 @@ const Home = () => {
 
   return (
     <div>
-      <h1>Home Page</h1>
-
+      
       {isAuthenticated && (
+        // Display user information if authenticated and exists
         <pre style={{ textAlign: "start" }}>
-          {JSON.stringify(user, null, 2)}
+          {user && <UserInfo user={user}/>} 
         </pre>
-      )}
-
-      <button>
-        <Link to="/new-project">Add New Project</Link>
-      </button>
+      )} 
+      
       <div>
         <h2>Projects List</h2>
         <ul>

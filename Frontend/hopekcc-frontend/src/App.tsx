@@ -19,14 +19,6 @@ function App() {
           <Route path="*" element={<div>Page Not Found</div>} />
         </Routes>
       </Router>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-
-      <div className="bg-blue-500 text-white p-4">Tailwind CSS is working!</div>
     </>
   );
 }

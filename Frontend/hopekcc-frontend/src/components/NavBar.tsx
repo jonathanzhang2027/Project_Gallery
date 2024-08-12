@@ -39,7 +39,7 @@ export const NavBar = () => {
             <div
               onMouseEnter={() => setShowUserInfo(true)}
               onMouseLeave={() => setShowUserInfo(false)}
-              className="relative cursor-pointer"
+              className="relative"
             >
               <img
                 src={user.picture}

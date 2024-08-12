@@ -80,14 +80,7 @@ const Home = () => {
 
   return (
     <div>
-      
-      {isAuthenticated && (
-        // Display user information if authenticated and exists
-        <pre style={{ textAlign: "start" }}>
-          {user && <UserInfo user={user}/>} 
-        </pre>
-      )} 
-      
+
       <div>
         <h2>Projects List</h2>
         <ul>

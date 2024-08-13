@@ -100,29 +100,32 @@ def upload_file(request, project_id):
 
 
 @csrf_exempt
+@require_auth(None)
 def list_user_projects(request):
     if request.method == 'GET':
+        # Extract the Auth0 User ID from the request
         auth0_user_id = get_user_id_from_request(request)
-        
+
         if not auth0_user_id:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
 
+        # Filter projects by the Auth0 User ID
         projects = Project.objects.filter(auth0_user_id=auth0_user_id)
         projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at', 'auth0_user_id'))
         
         return JsonResponse({'projects': projects_data}, safe=False, status=200)
-    
+
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-@require_auth(None)
-def list_user_projects(request):
-    if request.method == 'GET':
-        # Retrieve all projects
-        projects = Project.objects.all()
-        projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at', 'auth0_user_id'))
+# @require_auth(None)
+# def list_user_projects(request):
+#     if request.method == 'GET':
+#         # Retrieve all projects
+#         projects = Project.objects.all()
+#         projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at', 'auth0_user_id'))
         
-        return JsonResponse({'projects': projects_data}, safe=False, status=200)
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+#         return JsonResponse({'projects': projects_data}, safe=False, status=200)
+#     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 
 

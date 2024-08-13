@@ -15,6 +15,7 @@ import os
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
+from jwcrypto import jwk
 
 load_dotenv()
 
@@ -145,6 +146,19 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
+
+
+# Replace with your JWK data
+jwk_data = {
+    "kty": "RSA",
+    "use": "sig",
+    "n": "2q5TEBK4GkkJ5wSL3PSC8QOv3y1YziYxOPSxu86YidM6qGHr8zu-0SC1fO75v9H1WyRSdDMwEevJydJgH2xCytzDKk8DLKVJIFMQ3NL7_BUoqtIabvqRAbMStMfAgeJSDJiCcziwV97lBmtT9jlWl886hrPMOX-9I_8ci2wSAhE-7WJReJJRuzGn0Qiy9vedw6h3eCxsd5YcyxF37fOXV7D7DwXDOwBpZTKz6L34Q6GmiMvtD4oxhqbCJj30M8jxsOKOq2_Sjztm9LxlTghfBo-o0ah_2kKt8MEDDH_l2DzpgwLF1YHkVq4W9UmYQa0fQAISZaHdaMZ8sPp495RAww",
+    "e": "AQAB",
+    "alg": "RS256"
+}
+
+key = jwk.JWK(**jwk_data)
+pem = key.export_to_pem()
 
 # Token authorization configuration
 SIMPLE_JWT = {

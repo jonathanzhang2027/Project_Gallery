@@ -98,11 +98,12 @@ def upload_file(request, project_id):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
+
 @csrf_exempt
 def list_user_projects(request):
     if request.method == 'GET':
         auth0_user_id = get_user_id_from_request(request)
-
+        
         if not auth0_user_id:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
 
@@ -113,7 +114,7 @@ def list_user_projects(request):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-
+@require_auth(None)
 def list_user_projects(request):
     if request.method == 'GET':
         # Retrieve all projects

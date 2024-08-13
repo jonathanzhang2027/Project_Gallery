@@ -24,8 +24,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     clientId={clientId}
     authorizationParams={{
       redirect_uri: window.location.origin,
-      // audience: audience,
-      // scope: scope,
+      audience: audience,
+      scope: scope,
     }}
   >
     <QueryClientProvider client={queryClient}>

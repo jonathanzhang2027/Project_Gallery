@@ -141,10 +141,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'api.authentication.Auth0JSONWebTokenAuthentication',
-    ),
+    ],
+}
+
+# Token authorization configuration
+SIMPLE_JWT = {
+    'ALGORITHM': 'RS256',
+    'VERIFYING_KEY': 'your-auth0-public-key',
+    'SIGNING_KEY': 'your-auth0-signing-key',
+    # Ensure these match the algorithm and keys used by Auth0
 }
 
 # CORS configuration

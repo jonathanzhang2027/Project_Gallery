@@ -1,5 +1,6 @@
 from .views import *
 from django.urls import path
+from django.contrib import admin
 
 urlpatterns = [
     path('create_project/', create_project, name='create_project'),
@@ -10,5 +11,13 @@ urlpatterns = [
     
     path('projects/', list_user_projects, name='list_user_projects'),
     
+
+    path('admin/', admin.site.urls),
+    path('api/public', public),
+    path('api/private', private),
+    path('api/private-scoped', private_scoped),
+
+
     path('edit_project_details/<int:project_id>/', edit_project_details, name='edit_project_details'), # for testing purposes
+
 ]

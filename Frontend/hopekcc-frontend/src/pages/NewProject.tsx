@@ -1,5 +1,6 @@
-import React, { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
 interface InputFieldProps {
   id: string;
@@ -9,7 +10,13 @@ interface InputFieldProps {
   required?: boolean;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ id, label, value, onChange, required = false }) => (
+const InputField: React.FC<InputFieldProps> = ({
+  id,
+  label,
+  value,
+  onChange,
+  required = false,
+}) => (
   <div className="mb-4">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">
       {label}
@@ -29,7 +36,13 @@ interface TextAreaFieldProps extends InputFieldProps {
   rows?: number;
 }
 
-const TextAreaField: React.FC<TextAreaFieldProps> = ({ id, label, value, onChange, rows = 3 }) => (
+const TextAreaField: React.FC<TextAreaFieldProps> = ({
+  id,
+  label,
+  value,
+  onChange,
+  rows = 3,
+}) => (
   <div className="mb-4">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">
       {label}
@@ -45,64 +58,70 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({ id, label, value, onChang
 );
 
 interface ButtonProps {
-  type: 'button' | 'submit';
+  type: "button" | "submit";
   onClick?: () => void;
   className: string;
   children: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({ type, onClick, className, children }) => (
-  <button
-    type={type}
-    onClick={onClick}
-    className={className}
-  >
+const Button: React.FC<ButtonProps> = ({
+  type,
+  onClick,
+  className,
+  children,
+}) => (
+  <button type={type} onClick={onClick} className={className}>
     {children}
   </button>
 );
 
-
 const NewProject: React.FC = () => {
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
   const navigate = useNavigate();
+  const { getAccessTokenSilently } = useAuth0();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/create_project/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: projectName,
-          description: projectDescription,
-        }),
-      });
-  
+      const token = await getAccessTokenSilently(); // Get the token
+      console.log("Generated Token:", token);
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/create_project/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: projectName,
+            description: projectDescription,
+          }),
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error creating project:', errorData);
+        console.error("Error creating project:", errorData);
         // Handle form errors, e.g., show error messages
         return;
       }
-  
+
       const data = await response.json();
-      console.log('Project created successfully with ID:', data.project_id);
+      console.log("Project created successfully with ID:", data.project_id);
       // Handle success, e.g., redirect to the project's detail page or show a success message
 
-      navigate(`/edit-project/${data.project_id}`)
-  
+      navigate(`/edit-project/${data.project_id}`);
     } catch (error) {
-      console.error('Network error:', error);
+      console.error("Network error:", error);
       // Handle network errors, e.g., show a notification
     }
   };
 
   const handleCancel = () => {
-    navigate('/'); // Navigate to the home page
+    navigate("/"); // Navigate to the home page
   };
 
   return (

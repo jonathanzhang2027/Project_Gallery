@@ -1,5 +1,5 @@
 import React from 'react';
-import { User as UserImg, Mail, LogOut } from 'lucide-react';
+import { User as UserImg, Mail} from 'lucide-react';
 import LogoutButton from "./LogoutButton";
 import { User } from '@auth0/auth0-spa-js';
 const IconWrapper = ({ children }: { children: React.ReactNode }) => (

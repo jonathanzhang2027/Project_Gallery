@@ -3,6 +3,7 @@ from urllib.request import urlopen
 from authlib.oauth2.rfc7523 import JWTBearerTokenValidator
 from authlib.jose.rfc7517.jwk import JsonWebKey
 
+#  THIS FILE IS CURRENTLY NOT BEING USED. PLEASE IGNORE. THE THING THAT CHECKS THE TOKENS CAN BE FOUND IN UTILS.PY.
 
 class Auth0JWTBearerTokenValidator(JWTBearerTokenValidator):
     def __init__(self, domain, audience):

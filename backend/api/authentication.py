@@ -4,6 +4,10 @@ from django.conf import settings
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
 
+
+#  !!!!!!!!!!!!!! THIS FILE IS CURRENTLY NOT BEING USED. PLEASE IGNORE. THE THING THAT CHECKS THE TOKENS CAN BE FOUND IN UTILS.PY. !!!!!!!!!!!
+
+
 class Auth0JSONWebTokenAuthentication(BaseAuthentication):
     def authenticate(self, request):
         # Get the token from the Authorization header

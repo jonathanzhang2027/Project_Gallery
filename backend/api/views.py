@@ -28,13 +28,11 @@ validator = validator.Auth0JWTBearerTokenValidator(
 )
 require_auth.register_token_validator(validator)
 
-
 def public(request):
     """No access token required to access this route
     """
     response = "Hello from a public endpoint! You don't need to be authenticated to see this."
     return JsonResponse(dict(message=response))
-
 
 @require_auth(None)
 def private(request):
@@ -43,16 +41,12 @@ def private(request):
     response = "Hello from a private endpoint! You need to be authenticated to see this."
     return JsonResponse(dict(message=response))
 
-
 @require_auth("read:messages")
 def private_scoped(request):
     """A valid access token and an appropriate scope are required to access this route
     """
     response = "Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this."
     return JsonResponse(dict(message=response))
-
-
-
 
 
  # CONNECTED TO FRONTEND CREATE PROJECT PAGE
@@ -126,8 +120,6 @@ def list_user_projects(request):
         
 #         return JsonResponse({'projects': projects_data}, safe=False, status=200)
 #     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
 
 
 # for testing backend view only

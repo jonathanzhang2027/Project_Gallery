@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import {Button} from '../components/projectComponents/Buttons';
 interface InputFieldProps {
   id: string;
   label: string;
@@ -43,24 +43,6 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({ id, label, value, onChang
     />
   </div>
 );
-
-interface ButtonProps {
-  type: 'button' | 'submit';
-  onClick?: () => void;
-  className: string;
-  children: React.ReactNode;
-}
-
-const Button: React.FC<ButtonProps> = ({ type, onClick, className, children }) => (
-  <button
-    type={type}
-    onClick={onClick}
-    className={className}
-  >
-    {children}
-  </button>
-);
-
 
 const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState('');

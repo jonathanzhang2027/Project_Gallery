@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File, Eye, Download, ZoomIn, ZoomOut} from 'lucide-react'; //icons
 // Base ButtonProps interface
 interface ButtonProps {
-  onClick: () => void;
+  onClick?: () => void;
   className?: string;
   children?: React.ReactNode;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 // CollapseButton
@@ -34,10 +35,11 @@ interface TitleDisplayButtonProps extends ButtonProps {
   onCancelRename: () => void;
   isRenaming: boolean;
 }
-export const Button: React.FC<ButtonProps> = ({ onClick, className = '', children }) => (
+export const Button: React.FC<ButtonProps> = ({ onClick, className = '', children, type }) => (
   <button
     className={`px-1 py-1 text-black hover:bg-gray-300  ${className}`}
     onClick={onClick}
+    type={type}
   >
     {children}
   </button>

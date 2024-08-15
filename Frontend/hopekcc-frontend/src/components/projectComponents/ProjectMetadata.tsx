@@ -1,35 +1,22 @@
-import React, { useState } from 'react';
-import { ProjectTitle } from './projectMeta/ProjectTitle';
-import { DescriptionToggleButton } from './buttons';
-import { ProjectDescription } from './projectMeta/ProjectDescription';
+import React from 'react';
 
 interface ProjectMetadataProps {
-  title: string;
   description: string;
-  onTitleChange: (newTitle: string) => void;
-  onDescriptionChange: (newDescription: string) => void;
+  createdAt: string;
+  updatedAt: string;
+  fileCount: number;
 }
 
-export const ProjectMetadata: React.FC<ProjectMetadataProps> = ({
-  title,
-  description,
-  onTitleChange,
-  onDescriptionChange
-}) => {
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-
+const ProjectMetadata: React.FC<ProjectMetadataProps> = ({ description, createdAt, updatedAt, fileCount }) => {
   return (
-    <div className="bg-white p-4">
-      <div className="flex items-center justify-between mb-2">
-        <ProjectTitle title={title} onTitleChange={onTitleChange} />
-        <DescriptionToggleButton 
-          isEditing={isEditingDescription} 
-          onClick={() => setIsEditingDescription(!isEditingDescription)} 
-        />
-      </div>
-      {isEditingDescription && (
-        <ProjectDescription description={description} onDescriptionChange={onDescriptionChange} />
-      )}
+    <div className="text-left mb-6">
+      <p className='text-gray-400'><strong>Description:</strong></p>
+      <p className="text-gray-600 mb-4">{description}</p>
+      <p><strong>Created:</strong> {new Date(createdAt).toLocaleString()}</p>
+      <p><strong>Last Updated:</strong> {new Date(updatedAt).toLocaleString()}</p>
+      <p><strong>Total Files:</strong> {fileCount}</p>
     </div>
   );
 };
+
+export default ProjectMetadata;

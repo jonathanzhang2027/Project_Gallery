@@ -3,9 +3,9 @@ import { FileData, Files } from '../components/projectComponents/templateFiles';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
-import { CollapseButton } from '../components/projectComponents/buttons';
+import { CollapseButton } from '../components/projectComponents/Buttons';
 import { ProjectNavBar } from '../components/NavBar';
-import { ProjectDescription } from '../components/projectComponents/projectMeta/ProjectDescription';
+import { ProjectDescription } from '../components/projectComponents/ProjectDescription';
 import { useParams } from 'react-router-dom';
 
 
@@ -176,15 +176,14 @@ const ProjectEditor: React.FC = () => {
     return (
       <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
-        <FileTabsNavigation
+        { !isCollapsedFileTab && <FileTabsNavigation
           files={files}
           activeFile={activeFile}
           onFileSelect={setActiveFile}
           onAddFile={addNewFile}
           onDeleteFile={deleteFile}
           onRenameFile={renameFile}
-          isCollapsed={isCollapsedFileTab} 
-          onUploadFile={handleUpload}        />
+          onUploadFile={handleUpload}        />}
 
         <CollapseButton
           onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
@@ -199,8 +198,11 @@ const ProjectEditor: React.FC = () => {
           isCollapsed={isCollapsedPreview}
           collapseDirection="right"
         />
-    
-        <Preview isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)} previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+
+        {!isCollapsedPreview &&  
+          <Preview 
+            previewDoc={preview} 
+            onNavigate={handleNavigate}/>}
       </div>
     </div>
     )
@@ -209,7 +211,9 @@ const ProjectEditor: React.FC = () => {
     return (
       <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
-        <Preview  isEditing={isEditing} onSwitchView={() => setIsEditing(!isEditing)}previewDoc={preview} isCollapsed={isCollapsedPreview} onNavigate={handleNavigate}/>
+        <Preview  
+          previewDoc={preview} 
+          onNavigate={handleNavigate}/>
       </div>
     </div>
     )

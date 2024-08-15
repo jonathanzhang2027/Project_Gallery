@@ -151,7 +151,7 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
 
 from .serializers import ProjectSerializer, FileSerializer
 from .permissions import IsProjectOwnerOrReadOnly
-from rest_framework import viewsets
+from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
 
 class FileViewSet(viewsets.ModelViewSet):
@@ -162,7 +162,7 @@ class FileViewSet(viewsets.ModelViewSet):
     For detail views it performs :
     - retrieve
     - update
-    - partial_update
+    - update
     - destroy
 
     For list views it performs :
@@ -184,6 +184,11 @@ class FileViewSet(viewsets.ModelViewSet):
         project_id = request.data.get('project')
         if not project_id:
             return Response({'error': 'Project ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the project exists
+        project = Project.objects.filter(id=project_id).first()
+        if not project:
+            return Response({'error': 'Project does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             file_url = upload_file_to_gcs(file, project_id)
@@ -213,21 +218,33 @@ class FileViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
+        """handles both partial and full update"""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         file = request.FILES.get('file')
 
         try:
+            # Check if the project is being updated
+            if 'project' in request.data:
+                project_id = request.data['project']
+                # Ensure the new project exists
+                get_object_or_404(Project, id=project_id)
+            
             if file:
                 file_url = update_file_in_gcs(file, instance.file_url)
                 request.data['file_url'] = file_url
                 request.data['file_name'] = file.name
-
+            else:
+                # Remove file_url from request.data if no new file is provided
+                request.data.pop('file_url', None)
+                
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
             return Response(serializer.data)
+        except Project.DoesNotExist:
+            return Response({'error': 'Project does not exist'}, status=status.HTTP_404_NOT_FOUND)
         except exceptions.NotFound:
             return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:

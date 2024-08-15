@@ -153,28 +153,22 @@ from .serializers import ProjectSerializer, FileSerializer
 from .permissions import IsProjectOwnerOrReadOnly
 from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
+import logging
+
+logger = logging.getLogger(__name__)
 
 class FileViewSet(viewsets.ModelViewSet):
     """
-    This ViewSet automatically provides `list`, `create`, `retrieve`,
+    This ViewSet provides `list`, `create`, `retrieve`,
     `update` and `destroy` actions.
     
-    For detail views it performs :
-    - retrieve
-    - update
-    - update
-    - destroy
-
-    For list views it performs :
-    - list
-    - create
-
     Additionally, in detail views it'll retrieve the file content from Google Cloud Storage.
     """
+    
+    basename = 'file' #basename is showing none No idea why
     queryset = File.objects.all()
     serializer_class = FileSerializer
-    #TODO Add auth-0 authentication
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsProjectOwnerOrReadOnly]
     
     def create(self, request, *args, **kwargs):
         file = request.FILES.get('file')
@@ -185,10 +179,7 @@ class FileViewSet(viewsets.ModelViewSet):
         if not project_id:
             return Response({'error': 'Project ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the project exists
-        project = Project.objects.filter(id=project_id).first()
-        if not project:
-            return Response({'error': 'Project does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        # The permission class will handle ownership check
 
         try:
             file_url = upload_file_to_gcs(file, project_id)
@@ -201,8 +192,10 @@ class FileViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
+            logger.info(f"File created: {serializer.data['file_name']} for project {project_id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:
+            logger.error(f"Error creating file: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def retrieve(self, request, *args, **kwargs):
@@ -211,10 +204,13 @@ class FileViewSet(viewsets.ModelViewSet):
         data = serializer.data
         try:
             data['content'] = get_file_content_from_gcs(instance.file_url)
+            logger.info(f"File content retrieved: {instance.file_name}")
             return Response(data)
         except exceptions.NotFound:
+            logger.warning(f"File not found in storage: {instance.file_url}")
             return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.error(f"Error retrieving file content: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
@@ -223,13 +219,9 @@ class FileViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         file = request.FILES.get('file')
 
+        # The permission class will handle ownership check
+
         try:
-            # Check if the project is being updated
-            if 'project' in request.data:
-                project_id = request.data['project']
-                # Ensure the new project exists
-                get_object_or_404(Project, id=project_id)
-            
             if file:
                 file_url = update_file_in_gcs(file, instance.file_url)
                 request.data['file_url'] = file_url
@@ -242,21 +234,27 @@ class FileViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
+            logger.info(f"File updated: {instance.file_name}")
             return Response(serializer.data)
-        except Project.DoesNotExist:
-            return Response({'error': 'Project does not exist'}, status=status.HTTP_404_NOT_FOUND)
         except exceptions.NotFound:
+            logger.warning(f"File not found in storage: {instance.file_url}")
             return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.error(f"Error updating file: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        
+        # The permission class will handle ownership check
+        
         try:
             delete_file_from_gcs(instance.file_url)
             self.perform_destroy(instance)
+            logger.info(f"File deleted: {instance.file_name}")
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
+            logger.error(f"Error deleting file: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 '''
@@ -281,10 +279,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
     - list
     - create
     """
+    basename = 'project' #basename is showing none No idea why
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     #TODO Add auth-0 authentication
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsProjectOwnerOrReadOnly]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

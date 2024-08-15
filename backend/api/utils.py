@@ -75,7 +75,7 @@ def get_file_content_from_gcs(file_url, encoding='utf-8'):
             return blob.download_as_string().decode(encoding)
         else:
             return blob.download_as_bytes()
-    except exceptions.FirebaseError as e:
+    except exceptions.GoogleCloudError as e:
         raise Exception(f"Error retrieving file content from Google Cloud Storage: {str(e)}")
     except UnicodeDecodeError:
         raise Exception(f"Error decoding file content. The file may not be a text file or may use a different encoding.")

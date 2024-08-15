@@ -7,13 +7,12 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 import json
-import firebase_admin
 from firebase_admin import storage
 import requests
 from .utils import get_user_id_from_request
 from django.views.decorators.csrf import csrf_exempt
-
-
+from rest_framework.permissions import IsAuthenticated
+from .utils import upload_file_to_gcs, delete_file_from_gcs, get_file_content_from_gcs, update_file_in_gcs
 @csrf_exempt
 def create_project(request): # CONNECTED TO FRONTEND CREATE PROJECT PAGE
     temp_user = User.objects.get(username='temp_user')  # Placeholder for Auth0 user
@@ -88,24 +87,23 @@ def get_project_details(request, project_id): # CONNECTED TO FRONTEND CODE EDITO
     project = get_object_or_404(Project, id=project_id)
     
     # Placeholder for Auth0 user check
-    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
-    if project.user != temp_user:
-        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+    # temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    # if project.auth0_user_id != temp_user:
+    #     return JsonResponse({'error': 'Unauthorized action'}, status=403)
 
     files = project.files.all()
     files_data = []
 
     bucket = storage.bucket()
-
+    
     for file in files:
         file_content = None
-       
+        
         file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0] 
         blob = bucket.blob(file_path)
 
         if blob.exists():
             file_content = blob.download_as_text()
-
             files_data.append({
                 'id': file.id,
                 'file_name': file.file_name,
@@ -143,16 +141,143 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
     return JsonResponse({'success': True})
 
 
-# still need: 
-# view for renaming file (connect to frontend) --> file editor
-# view for changing / updating file contents --> file editor
-# view for changing project title --> file editor
-# view for changing project description --> file editor
-# view for creating new empty file --> file editor
-# view for uploading file --> file editor
-# view for deleting project --> file editor
+'''
+#CRUD files
+    - view for changing / updating file contents --> file editor
+    - view for renaming file (connect to frontend) --> file editor
+    - view for creating new empty file --> file editor
+    - view for uploading file --> file editor
+'''
 
-# view for creating project --> file editor
+from .serializers import ProjectSerializer, FileSerializer
+from .permissions import IsProjectOwnerOrReadOnly
+from rest_framework import viewsets
+from rest_framework.response import Response
+
+class FileViewSet(viewsets.ModelViewSet):
+    """
+    This ViewSet automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
+    
+    For detail views it performs :
+    - retrieve
+    - update
+    - partial_update
+    - destroy
+
+    For list views it performs :
+    - list
+    - create
+
+    Additionally, in detail views it'll retrieve the file content from Google Cloud Storage.
+    """
+    queryset = File.objects.all()
+    serializer_class = FileSerializer
+    #TODO Add auth-0 authentication
+    # permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        project_id = request.data.get('project')
+        if not project_id:
+            return Response({'error': 'Project ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            file_url = upload_file_to_gcs(file, project_id)
+            
+            serializer = self.get_serializer(data={
+                'project': project_id,
+                'file_name': file.name,
+                'file_url': file_url
+            })
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        try:
+            data['content'] = get_file_content_from_gcs(instance.file_url)
+            return Response(data)
+        except exceptions.NotFound:
+            return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        file = request.FILES.get('file')
+
+        try:
+            if file:
+                file_url = update_file_in_gcs(file, instance.file_url)
+                request.data['file_url'] = file_url
+                request.data['file_name'] = file.name
+
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            return Response(serializer.data)
+        except exceptions.NotFound:
+            return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            delete_file_from_gcs(instance.file_url)
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+'''
+CRUD projects
+    view for changing project title --> file editor
+    view for changing project description --> file editor
+    view for deleting project --> file editor
+    view for creating project --> file editor
+'''
+class ProjectViewSet(viewsets.ModelViewSet):
+    """
+    This ViewSet automatically provides `list`, `create`, `update` and `destroy` actions.
+    We override the `retrieve` action to include related files.
+
+    For detail views it performs :
+    - retrieve
+    - update
+    - partial_update
+    - destro
+
+    For list views it performs :
+    - list
+    - create
+    """
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    #TODO Add auth-0 authentication
+    # permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        # The related files are already included in the serializer
+        return Response(data)
+
+
+
 # Auth0 implementation in everything
 
 

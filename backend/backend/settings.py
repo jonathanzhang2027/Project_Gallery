@@ -13,11 +13,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import logging
 from pathlib import Path
 import os
-from venv import logger
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
-from jwcrypto import jwk
 from datetime import timedelta
 
 import requests
@@ -158,45 +156,12 @@ AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
 AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
 AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
-AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE') # my api is different so this is mine...
-
-
-logger = logging.getLogger(__name__) # logging for debugging purposes! Shows up in backend terminal when running backend server
-def fetch_auth0_public_key():
-    jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json" 
-    response = requests.get(jwks_url)
-    response.raise_for_status()
-    jwks = response.json()
-    key_data = jwks['keys'][0]  # Adjust if you need to select based on 'kid'
-    logger.info(f"Fetched Key Data: {key_data}")
-    return key_data
-
-# Fetch the key
-key_data = fetch_auth0_public_key()
-PUBLIC_KEY = key_data['x5c'][0]  # x5c contains the PEM-encoded public key
-
-# Print the PEM key to inspect it
-logger.info(f"Public Key PEM: {PUBLIC_KEY}")
-
-# Token authorization configuration
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': False,
-    'ALGORITHM': 'RS256',
-    'SIGNING_KEY': None,
-    'VERIFYING_KEY': PUBLIC_KEY,
-    'AUDIENCE': AUTH0_AUDIENCE,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
+AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE') 
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Adjust as needed for your frontend
 ]
-
 
 
 # Google Cloud Storage configuration

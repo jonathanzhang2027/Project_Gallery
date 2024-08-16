@@ -1,51 +1,27 @@
-import requests
-from jose import jwt, JWTError
-from django.conf import settings
-from rest_framework.authentication import BaseAuthentication
-from rest_framework import exceptions
 
+from rest_framework import authentication, exceptions
+from .utils import decode_jwt
 
-#  !!!!!!!!!!!!!! THIS FILE IS CURRENTLY NOT BEING USED. PLEASE IGNORE. THE THING THAT CHECKS THE TOKENS CAN BE FOUND IN UTILS.PY. !!!!!!!!!!!
-
-
-class Auth0JSONWebTokenAuthentication(BaseAuthentication):
+class JWTAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
-        # Get the token from the Authorization header
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get('Authorization', None)
         if not auth_header:
             return None
-        
+
+        parts = auth_header.split()
+
+        if parts[0].lower() != 'bearer':
+            raise exceptions.AuthenticationFailed('Authorization header must start with Bearer')
+        elif len(parts) == 1:
+            raise exceptions.AuthenticationFailed('Token not found')
+        elif len(parts) > 2:
+            raise exceptions.AuthenticationFailed('Authorization header must be Bearer token')
+
+        token = parts[1]
         try:
-            # Split "Bearer <Token>"
-            token = auth_header.split()[1]
+            # Decode the JWT token
+            payload = decode_jwt(token)
+        except Exception as e:
+            raise exceptions.AuthenticationFailed('Invalid token') from e
 
-            # Fetch the Auth0 public keys
-            jwks_url = f'https://{settings.AUTH0_DOMAIN}/.well-known/jwks.json'
-            jwks = requests.get(jwks_url).json()
-
-            # Decode the token using Auth0's public keys
-            unverified_header = jwt.get_unverified_header(token)
-            rsa_key = {}
-            for key in jwks['keys']:
-                if key['kid'] == unverified_header['kid']:
-                    rsa_key = {
-                        'kty': key['kty'],
-                        'kid': key['kid'],
-                        'use': key['use'],
-                        'n': key['n'],
-                        'e': key['e']
-                    }
-            
-            if rsa_key:
-                payload = jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=['RS256'],
-                    audience=settings.AUTH0_CLIENT_ID,
-                    issuer=f'https://{settings.AUTH0_DOMAIN}/'
-                )
-                return (payload, token)
-        except JWTError as e:
-            raise exceptions.AuthenticationFailed('Invalid token')
-
-        return None
+        return (payload, token)

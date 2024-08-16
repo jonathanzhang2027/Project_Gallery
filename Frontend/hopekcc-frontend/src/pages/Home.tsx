@@ -1,16 +1,9 @@
 import { Link } from "react-router-dom";
-import axios from "axios";
-import { useQuery } from "react-query";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Clock, Calendar } from 'lucide-react';
-// Define the structure of a project
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
+import { useProjectList } from "../utils/api.ts";
+import { Project } from "../utils/types.ts";
+import {mapApiResponseArray, mapApiResponseToProject} from "../utils/mappers.ts";
 
 const ProjectList = ({ projects }: { projects: Project[] }) => {
   const ProjectHeader = () => {
@@ -70,48 +63,29 @@ const Home = () => {
   const {
     isAuthenticated,
     isLoading: authLoading,
-    getAccessTokenSilently,
   } = useAuth0();
+  const {data, status:loadingStatus, isError, error} = useProjectList()
   // Fetch projects using axios and Auth0 token
-  const fetchProjects = async (): Promise<Project[]> => {
-    // Get the Auth0 token
-    const token = await getAccessTokenSilently();
-    // Fetch projects from the backend - REPLACE WITH SERVER LATER
-    const response = await axios.get("http://127.0.0.1:8000/api/projects/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    console.log(response);
-    return response.data;
-  };
-  
-  const { data, isLoading, isError, error } = useQuery<Project[]>(
-    "projects",
-    fetchProjects,
-    { // Only fetch projects if the user is authenticated otherwise it won't fetch
-      enabled: isAuthenticated,
-    }
-  );
+  const projects = data ? mapApiResponseArray(data, mapApiResponseToProject) : [];
+  // console.log('project list is', projects)
+    
   if (authLoading) {
     return <div>Loading authentication...</div>;
   }
+
   if (!isAuthenticated) {
     return <div>Please log in to view your projects.</div>;
   }
-  if (isLoading) {
+
+  if (loadingStatus === 'loading') {
     return <div>Loading projects...</div>;
   }
+
   if (isError) {
-    return (
-      <div>
-        Error loading projects:{" "}
-        {error instanceof Error ? error.message : "Unknown error"}
-      </div>
-    );
+    return <div>Error loading projects: {error instanceof Error ? error.message : "Unknown error"}</div>;
   }
-  // Ensure `data` is defined before accessing it
-  const projects = data || [];
+
+  
   return (
     <div className="bg-gray-100  mx-auto px-4 py-8">
       <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">Projects</h2>

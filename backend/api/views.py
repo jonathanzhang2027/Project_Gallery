@@ -165,10 +165,9 @@ class FileViewSet(viewsets.ModelViewSet):
     Additionally, in detail views it'll retrieve the file content from Google Cloud Storage.
     """
     
-    basename = 'file' #basename is showing none No idea why
     queryset = File.objects.all()
     serializer_class = FileSerializer
-    permission_classes = [IsProjectOwnerOrReadOnly]
+    # permission_classes = [IsProjectOwnerOrReadOnly]
     
     def create(self, request, *args, **kwargs):
         file = request.FILES.get('file')
@@ -279,11 +278,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     - list
     - create
     """
-    basename = 'project' #basename is showing none No idea why
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     #TODO Add auth-0 authentication
-    permission_classes = [IsProjectOwnerOrReadOnly]
+    # permission_classes = [IsProjectOwnerOrReadOnly]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

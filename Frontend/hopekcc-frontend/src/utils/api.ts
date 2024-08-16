@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
-
+import {File, Project} from './types';
 const API_URL = 'http://127.0.0.1:8000/api';
 
 // Create an axios instance
@@ -9,45 +9,72 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Add a request interceptor to include the auth token
-api.interceptors.request.use(async (config) => {
+// Custom hook to get the access token
+
+export const useAccessToken = () => {
   const { getAccessTokenSilently } = useAuth0();
-  const token = await getAccessTokenSilently();
-  config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-// Project types
-interface Project {
-  id: number;
-  auth0_user_id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// File types
-interface File {
-  id: number;
-  project: number;
-  file_name: string;
-  file_url: string;
-  created_at: string;
-  updated_at: string;
-  content?: string; // This will be populated when fetching a single file
-}
-
+  return useQuery('accessToken', 
+    () => getAccessTokenSilently(),
+    {
+      staleTime: 1000 * 60 * 59, // 59 minutes
+    }
+  );
+};
 // Project hooks
+
 export const useProjectList = () => {
-  return useQuery<Project[]>('projects', () => api.get('/projects/').then(res => res.data));
+  const { data: accessToken } = useAccessToken();
+
+  return useQuery<Project[], Error>(
+    'projects',
+    async () => {
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+      const response = await api.get('/projects/', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    },
+    {
+      enabled: !!accessToken,
+    }
+  );
 };
 
-export const useProjectDetails = (id: number) => {
-  return useQuery<Project>(['projectDetails', id], () => api.get(`/projects/${id}/`).then(res => res.data), {
-    enabled: !!id // Only run the query if id is provided
-  });
+// File hooks
+export const useProjectDetail = (projectId: number) => {
+  const { data: accessToken } = useAccessToken();
+
+  return useQuery<Project, Error>(
+    ['project', projectId],
+    async () => {
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+      try {
+        const response = await api.get(`/projects/${projectId}/`);
+        return response.data;
+      } catch (error) {
+        throw error;
+      }
+    },
+    {
+      enabled: !!accessToken,
+      retry: (failureCount, error) => {
+        // Don't retry on 404 errors
+        if (error.message === 'Project not found') {
+          return false;
+        }
+        // Retry up to 3 times for other errors
+        return failureCount < 3;
+      },
+      retryOnMount: false, // Don't retry on component mount if we already have data
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    }
+  );
 };
+
 
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
@@ -86,15 +113,6 @@ export const useDeleteProject = () => {
   );
 };
 
-// File hooks
-export const useProjectFiles = (projectId: number) => {
-  return useQuery<File[]>(['projectFiles', projectId], () => 
-    api.get(`/projects/${projectId}/files/`).then(res => res.data),
-    {
-      enabled: !!projectId // Only run the query if projectId is provided
-    }
-  );
-};
 
 export const useFileDetails = (fileId: number) => {
   return useQuery<File>(['fileDetails', fileId], () => 
@@ -108,7 +126,7 @@ export const useFileDetails = (fileId: number) => {
 export const useCreateFile = () => {
   const queryClient = useQueryClient();
   return useMutation<File, Error, { projectId: number; file: FormData }>(
-    ({ projectId, file }) => api.post(`/projects/${projectId}/files/`, file, {
+    ({ projectId, file }) => api.post(`/files/`, file, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {

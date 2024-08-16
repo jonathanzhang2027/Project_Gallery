@@ -8,8 +8,8 @@ import ProjectFileList from './ProjectFilelist';
 
 interface ProjectData {
   id: number;
-  project_name: string;
-  project_description: string;
+  name: string;
+  description: string;
   files: FileData[];
   created_at: string;
   updated_at: string;
@@ -28,7 +28,7 @@ const Project: React.FC = () => {
   const fetchProjectData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get<ProjectData>(`http://127.0.0.1:8000/api/project_details/${id}/`);
+      const response = await axios.get<ProjectData>(`http://127.0.0.1:8000/api/projects/${id}/`);
       setProject(response.data);
       setError(null);
     } catch (error) {
@@ -39,6 +39,7 @@ const Project: React.FC = () => {
     }
   };
 
+  console.log(project);
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -55,18 +56,26 @@ const Project: React.FC = () => {
     <div className="container bg-gray-100 mx-auto px-4 py-8">
       <div className="bg-white shadow rounded-lg p-6">
         <ProjectHeader 
-          projectName={project.project_name}
+          projectName={project.name}
           projectId={project.id}
         />
         
         <ProjectMetadata 
-          description={project.project_description}
+          description={project.description}
           createdAt={project.created_at}
           updatedAt={project.updated_at}
           fileCount={project.files.length}
         />
 
-        <ProjectFileList files={project.files} />
+        <ProjectFileList files={project.files} onDelete={function (id: number): void {
+          throw new Error('Function not implemented.');
+        } } onRename={function (id: number): void {
+          throw new Error('Function not implemented.');
+        } } onAdd={function (): void {
+          throw new Error('Function not implemented.');
+        } } onUpload={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
       </div>
     </div>
   );

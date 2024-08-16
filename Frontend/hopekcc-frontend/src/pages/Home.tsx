@@ -12,25 +12,6 @@ interface Project {
   updated_at: string;
 }
 
-// // Dummy data to simulate projects
-// const dummyProjects: Project[] = [
-//   { id: "1", title: "Project One", description: "Description of Project One" },
-//   { id: "2", title: "Project Two", description: "Description of Project Two" },
-//   {
-//     id: "3",
-//     title: "Project Three",
-//     description: "Description of Project Three",
-//   },
-// ];
-// // TESTING ONLY - DELETE LATER - Simulate fetching projects
-// const fetchProjects = async (): Promise<Project[]> => {
-//   // Simulate a delay
-//   return new Promise((resolve) => {
-//     setTimeout(() => {
-//       resolve(dummyProjects);
-//     }, 300); // 0.3-second delay to simulate loading
-//   });
-// };
 const ProjectList = ({ projects }: { projects: Project[] }) => {
   const ProjectHeader = () => {
     return (
@@ -47,7 +28,7 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
     <div key={project.id} className="grid grid-cols-12 gap-4 items-center py-3 hover:bg-gray-50 rounded-md transition-colors duration-150">
       <div className="col-span-3">
         <h3 className="text-left font-medium text-blue-800 hover:underline truncate">
-          <Link to={`/project/${project.id}`}>
+          <Link to={`/projects/${project.id}`}>
             {project.name}
           </Link>
         </h3>
@@ -77,7 +58,7 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
             <p className="text-gray-500 italic py-3">No projects available</p>
           ) : (
             projects.map((project: Project) => (
-              <ProjectItem project = {project} />
+              <ProjectItem key={project.id} project = {project} />
             ))
           )}
         </div>
@@ -102,12 +83,15 @@ const Home = () => {
       },
     });
     console.log(response);
-    return response.data.projects;
+    return response.data;
   };
-
+  
   const { data, isLoading, isError, error } = useQuery<Project[]>(
     "projects",
-    fetchProjects
+    fetchProjects,
+    { // Only fetch projects if the user is authenticated otherwise it won't fetch
+      enabled: isAuthenticated,
+    }
   );
   if (authLoading) {
     return <div>Loading authentication...</div>;
@@ -126,7 +110,6 @@ const Home = () => {
       </div>
     );
   }
-
   // Ensure `data` is defined before accessing it
   const projects = data || [];
   return (

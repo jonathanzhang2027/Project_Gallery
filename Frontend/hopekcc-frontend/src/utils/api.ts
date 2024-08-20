@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQueries, useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
 import { File, Project } from './types';
-import { isValidFileName } from './utils';
+import { isValidFileName, isValidProjectName } from './utils';
 import { mapFileToApiRequest } from './mappers';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -26,6 +26,79 @@ export const useAccessToken = () => {
 };
 // Project hooks
 
+export const useProjectOperations = (projectId: number) => {
+  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const deleteProjectMutation = useDeleteProject();
+  const updateProjectMutation = useUpdateProject();
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete this project?`)) return false;
+
+    try {
+      await deleteProjectMutation.mutateAsync(projectId);
+      // Assuming you have a projects list query
+      queryClient.invalidateQueries('projects');
+      return true; // Indicate successful deletion
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      setError('Failed to delete project. Please try again later.');
+      return false; // Indicate failed deletion
+    }
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!newName.trim() && isValidProjectName(newName).isValid) {
+      setError('Project name error: ' + isValidProjectName(newName).message);
+      return false;
+    }
+
+    // Optimistically update the UI
+    queryClient.setQueryData<Project | undefined>(['project', projectId], (old) => {
+      if (!old) return undefined;
+      return { ...old, name: newName, };
+    });
+
+    try {
+      await updateProjectMutation.mutateAsync({ id: projectId, data: { name: newName }});
+      return true; // Indicate successful rename
+    } catch (error) {
+      // Revert optimistic update
+      queryClient.invalidateQueries(['project', projectId]);
+      console.error('Error renaming project:', error);
+      setError('Failed to rename project. Please try again.');
+      return false; // Indicate failed rename
+    }
+  };
+
+ 
+  const handleChangeDescription = async (newDescription: string) => {
+    // Optimistically update the UI
+    queryClient.setQueryData<Project | undefined>(['project', projectId], (old) => {
+      if (!old) return undefined;
+      return { ...old, description: newDescription };
+    });
+
+    try {
+      await updateProjectMutation.mutateAsync({ id: projectId, data: { description: newDescription } });
+      return true; // Indicate successful description change
+    } catch (error) {
+      // Revert optimistic update
+      queryClient.invalidateQueries(['project', projectId]);
+      console.error('Error changing project description:', error);
+      setError('Failed to change project description. Please try again.');
+      return false; // Indicate failed description change
+    }
+  };
+
+  return {
+    handleDelete,
+    handleRename,
+    handleChangeDescription,
+    error,
+    setError,
+  };
+};
 
 export const useFileOperations = (projectId: number) => {
   /*
@@ -57,7 +130,7 @@ export const useFileOperations = (projectId: number) => {
       return false; // Indicate failed deletion
     }
   };
-
+  
   const handleRename = async (fileId: number, newName: string) => {
     const { isValid, message } = isValidFileName(newName);
     if (!isValid) {
@@ -312,7 +385,7 @@ export const useUpdateProject = () => {
 
 export const useDeleteProject = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>(
+  return useMutation<void, Error, number>(
     (id) => api.delete(`/projects/${id}/`).then(() => { }),
     {
       onSuccess: () => {

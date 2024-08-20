@@ -8,9 +8,9 @@ import { ProjectDescription } from '../components/projectComponents/ProjectDescr
 import { useParams } from 'react-router-dom';
 
 import { File} from "../utils/types" 
-import { useProjectDetail, useMultipleFileDetails, useUpdateFile } from '../utils/api';
+import { useProjectDetail, useMultipleFileDetails} from '../utils/api';
 import { useFileOperations } from '../utils/api';
-import {mapProject, mapFile, mapFiles, mapFileRequest} from "../utils/mappers";
+import {mapProject, mapFile} from "../utils/mappers";
 
 const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   const htmlFile = files.find(file => file.id === activeFileID);

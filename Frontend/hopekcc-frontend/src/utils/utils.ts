@@ -1,5 +1,9 @@
 // utils/fileNameValidator.ts
 
+export function isValidProjectName(name: string): {isValid: boolean; message: string} {
+  return (isValidFileName(name)); //reuse the function from filename for now.
+}
+
 export function isValidFileName(fileName: string): { isValid: boolean; message: string } {
     // Remove any leading/trailing whitespace
     const trimmedFileName = fileName.trim();

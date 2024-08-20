@@ -3,7 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Clock, Calendar } from 'lucide-react';
 import { useProjectList } from "../utils/api.ts";
 import { Project } from "../utils/types.ts";
-import {mapApiResponseArray, mapApiResponseToProject} from "../utils/mappers.ts";
+import {mapProjects} from "../utils/mappers.ts";
 
 const ProjectList = ({ projects }: { projects: Project[] }) => {
   const ProjectHeader = () => {
@@ -66,7 +66,7 @@ const Home = () => {
   } = useAuth0();
   const {data, status:loadingStatus, isError, error} = useProjectList()
   // Fetch projects using axios and Auth0 token
-  const projects = data ? mapApiResponseArray(data, mapApiResponseToProject) : [];
+  const projects = data ? mapProjects(data) : [];
   // console.log('project list is', projects)
     
   if (authLoading) {

@@ -5,14 +5,8 @@ interface File {
   file_url: string;
   created_at: string;
   updated_at: string;
-  file_content?: string;
-}
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  // Add other user properties as needed
+  content?: string;
+  file?: globalThis.File;  // Add this line to include a built-in File object
 }
 
 interface Project {
@@ -27,6 +21,5 @@ interface Project {
 
 export type {
   File,
-  User,
   Project
 }

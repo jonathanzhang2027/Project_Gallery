@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File, Eye, Download, ZoomIn, ZoomOut} from 'lucide-react'; //icons
+import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File as Fileimg, Eye, Download, ZoomIn, ZoomOut} from 'lucide-react'; //icons
+import {File} from "../../utils/types"
 // Base ButtonProps interface
 interface ButtonProps {
   onClick?: () => void;
@@ -22,9 +23,9 @@ interface EditingButtonProps extends Omit<ButtonProps, 'onClick'> {
 }
 
 interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'>{
-  filename: string;
-  onFileSelect: (filename: string) => void;
-  onRename: (oldName: string, newName: string) => void;
+  file: File;
+  onFileSelect: (fileId: number) => void;
+  onRename: (fileId: number, newName: string) => void;
   onCancelRename: () => void;
   isActive: boolean;
   isRenaming: boolean;
@@ -74,7 +75,7 @@ export const CollapseButton: React.FC<CollapseButtonProps> = ({
 };
 
 export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
-  filename,
+  file,
   onFileSelect,
   onRename,
   onCancelRename,
@@ -82,7 +83,7 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   isRenaming,
   onDoubleClick
 }) => {
-  const [newName, setNewName] = useState(filename);
+  const [newName, setNewName] = useState(file.file_name);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,8 +93,8 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   }, [isRenaming]);
 
   const handleBlur = () => {
-    if (newName && newName !== filename) {
-      onRename(filename, newName);
+    if (newName && newName !== file.file_name) {
+      onRename(file.id, newName);
     } else {
       onCancelRename();
     }
@@ -126,10 +127,10 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
         />
       ) : (
         <button
-          onClick={() => onFileSelect(filename)}
+          onClick={() => onFileSelect(file.id)}
           className="w-full text-left hover:bg-transparent hover:text-current flex items-center"
         >
-          {filename}
+          {file.file_name}
         </button>
       )}
     </div>
@@ -209,7 +210,7 @@ export const AddButton: React.FC<ButtonProps> = ({ onClick , className = ''}) =>
     onClick={onClick}
     className={`${className}`}
   >
-    <File/>
+    <Fileimg/>
   </Button>
 );
 

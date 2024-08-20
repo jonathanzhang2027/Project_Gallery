@@ -1,7 +1,12 @@
-import type { File, Project, User } from './types';
+import type { File, Project} from './types';
 
 // Mapper functions
 function mapApiResponseToFile(data: any): File {
+    let decodedContent = data?.content?.content || '';
+    if (data?.content?.is_base64) {
+        decodedContent = atob(decodedContent);
+    }
+
     return {
         id: data.id,
         project: data.project,
@@ -9,16 +14,7 @@ function mapApiResponseToFile(data: any): File {
         file_url: data.file_url,
         created_at: data.created_at,
         updated_at: data.updated_at,
-        file_content: data.file_content
-    };
-}
-
-function mapApiResponseToUser(data: any): User {
-    return {
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        // Map other user properties as needed
+        content: decodedContent
     };
 }
 
@@ -44,19 +40,14 @@ function mapProjectToApiRequest(project: Partial<Project>): any {
         // The API usually manages these fields
     };
 }
-
 function mapFileToApiRequest(file: Partial<File>): any {
-    const content = file.file_content || '';
-    const file_name = file.file_name || 'new_file.txt';
-    return {
-        project: file.project,
-        file: new File([content], file_name) 
-        
-        // Typically, you don't send back file_url, created_at, and updated_at
-        // The API usually manages these fields
-    };
+    const result: any = {...file};
+    if (file.content) {
+      // Use a generic name since the actual name doesn't matter for storage
+      result.file = new File([file.content], file.file_name || 'content');
+    }
+    return result;
 }
-
 // Generic mapper function
 function mapApiResponse<T>(data: any, mapperFn: (item: any) => T): T {
     return mapperFn(data);
@@ -65,7 +56,6 @@ function mapApiResponse<T>(data: any, mapperFn: (item: any) => T): T {
 // Usage examples
 const mapProject = (data: any) => mapApiResponse(data, mapApiResponseToProject);
 const mapFile = (data: any) => mapApiResponse(data, mapApiResponseToFile);
-const mapUser = (data: any) => mapApiResponse(data, mapApiResponseToUser);
 
 // Function to map an array of items
 function mapApiResponseArray<T>(data: any[], mapperFn: (item: any) => T): T[] {
@@ -75,8 +65,6 @@ function mapApiResponseArray<T>(data: any[], mapperFn: (item: any) => T): T[] {
 // Usage example for array mapping
 const mapProjects = (data: any[]) => mapApiResponseArray(data, mapApiResponseToProject);
 const mapFiles = (data: any[]) => mapApiResponseArray(data, mapApiResponseToFile);
-const mapUsers = (data: any[]) => mapApiResponseArray(data, mapApiResponseToUser);
-
 // Generic reverse mapper function
 function mapToApiRequest<T>(data: Partial<T>, mapperFn: (item: Partial<T>) => any): any {
     return mapperFn(data);
@@ -88,22 +76,18 @@ const mapFileRequest = (data: Partial<File>) => mapToApiRequest(data, mapFileToA
 
 export {
     //mappers
-    mapApiResponseToFile,
-    mapApiResponseToUser,
-    mapApiResponseToProject,
-    mapApiResponse,
-    mapApiResponseArray,
+    // mapApiResponseToFile,
+    // mapApiResponseToProject,
+    // mapApiResponse,
+    // mapApiResponseArray,
     mapProject,
     mapFile,
-    mapUser,
     mapProjects,
     mapFiles,
-    mapUsers,
 
-    // Reverse mappers
-    mapProjectToApiRequest,
-    mapFileToApiRequest,
-    mapToApiRequest,
     mapProjectRequest,
-    mapFileRequest
+    mapFileRequest,
+    mapToApiRequest,
+    mapFileToApiRequest,
+    mapProjectToApiRequest,
 };

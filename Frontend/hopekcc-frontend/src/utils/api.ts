@@ -1,7 +1,10 @@
 import axios from 'axios';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
-import {File, Project} from './types';
+import { File, Project } from './types';
+import { isValidFileName } from './utils';
+
 const API_URL = 'http://127.0.0.1:8000/api';
 
 // Create an axios instance
@@ -13,7 +16,7 @@ const api = axios.create({
 
 export const useAccessToken = () => {
   const { getAccessTokenSilently } = useAuth0();
-  return useQuery('accessToken', 
+  return useQuery('accessToken',
     () => getAccessTokenSilently(),
     {
       staleTime: 1000 * 60 * 59, // 59 minutes
@@ -21,6 +24,173 @@ export const useAccessToken = () => {
   );
 };
 // Project hooks
+
+
+export const useFileOperations = (projectId: number) => {
+  /*
+    
+  */
+  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const createFileMutation = useCreateFile();
+  const updateFileMutation = useUpdateFile();
+  const deleteFileMutation = useDeleteFile();
+
+  const handleDelete = async (fileId: number, filename: string) => {
+    if (!confirm(`Are you sure you want to delete ${filename}?`)) return null;
+
+    // Optimistically update the UI
+    queryClient.setQueryData(['project', projectId], (old: any) => ({
+      ...old,
+      files: old.files.filter((f: File) => f.id !== fileId)
+    }));
+
+    try {
+      await deleteFileMutation.mutateAsync({ id: fileId, projectId });
+      return true; // Indicate successful deletion
+    } catch (error) {
+      // Revert optimistic update
+      queryClient.invalidateQueries(['project', projectId]);
+      console.error('Error deleting file:', error);
+      setError('Failed to delete file. Please try again later.');
+      return false; // Indicate failed deletion
+    }
+  };
+
+  const handleRename = async (fileId: number, newName: string) => {
+    const { isValid, message } = isValidFileName(newName);
+    if (!isValid) {
+      setError(message);
+      return false;
+    }
+
+    // Optimistically update the UI
+    queryClient.setQueryData(['project', projectId], (old: any) => ({
+      ...old,
+      files: old.files.map((f: File) => 
+        f.id === fileId ? { ...f, file_name: newName } : f
+      )
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file_name', newName);
+      await updateFileMutation.mutateAsync({ id: fileId, data: formData });
+      return true; // Indicate successful rename
+    } catch (error) {
+      // Revert optimistic update
+      queryClient.invalidateQueries(['project', projectId]);
+      console.error('Error renaming file:', error);
+      setError('Failed to rename file. Please try again.');
+      return false; // Indicate failed rename
+    }
+  };
+
+  const handleAdd = async (newFileName: string) => {
+    const { isValid, message } = isValidFileName(newFileName);
+    if (!isValid) {
+      setError(message);
+      return null;
+    }
+
+    const tempId = Date.now();
+    const optimisticFile: Partial<File> = {
+      id: tempId,
+      file_name: newFileName,
+      project: projectId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Optimistically update the UI
+    queryClient.setQueryData(['project', projectId], (old: any) => ({
+      ...old,
+      files: [...old.files, optimisticFile]
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file_name', newFileName);
+      formData.append('project', projectId.toString());
+      formData.append('content', ' ');
+      const createdFile = await createFileMutation.mutateAsync({ id: projectId, file: formData });
+      
+      // Update the optimistic file with the real data
+      queryClient.setQueryData(['project', projectId], (old: any) => ({
+        ...old,
+        files: old.files.map((f: File) => f.id === tempId ? createdFile : f)
+      }));
+
+      return createdFile; // Return the created file
+    } catch (error) {
+      // Remove the optimistic file
+      queryClient.setQueryData(['project', projectId], (old: any) => ({
+        ...old,
+        files: old.files.filter((f: File) => f.id !== tempId)
+      }));
+      console.error('Error adding file:', error);
+      setError('Failed to add file. Please try again.');
+      return null; // Indicate failed add
+    }
+  };
+
+  const handleUpload = async (file: globalThis.File) => {
+    const { isValid, message } = isValidFileName(file.name);
+    if (!isValid) {
+      setError(message);
+      return null;
+    }
+
+    const tempId = Date.now();
+    const optimisticFile: Partial<File> = {
+      id: tempId,
+      file_name: file.name,
+      project: projectId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Optimistically update the UI
+    queryClient.setQueryData(['project', projectId], (old: any) => ({
+      ...old,
+      files: [...old.files, optimisticFile]
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('project', projectId.toString());
+      const createdFile = await createFileMutation.mutateAsync({ id: projectId, file: formData });
+      
+      // Update the optimistic file with the real data
+      queryClient.setQueryData(['project', projectId], (old: any) => ({
+        ...old,
+        files: old.files.map((f: File) => f.id === tempId ? createdFile : f)
+      }));
+
+      return createdFile; // Return the created file
+    } catch (error) {
+      // Remove the optimistic file
+      queryClient.setQueryData(['project', projectId], (old: any) => ({
+        ...old,
+        files: old.files.filter((f: File) => f.id !== tempId)
+      }));
+      console.error('Error uploading file:', error);
+      setError('Failed to upload file. Please try again.');
+      return null; // Indicate failed upload
+    }
+  };
+
+  return {
+    handleDelete,
+    handleRename,
+    handleAdd,
+    handleUpload,
+    error,
+    setError,
+  };
+};
+
 
 export const useProjectList = () => {
   const { data: accessToken } = useAccessToken();
@@ -42,10 +212,11 @@ export const useProjectList = () => {
   );
 };
 
-// File hooks
-export const useProjectDetail = (projectId: number) => {
-  const { data: accessToken } = useAccessToken();
 
+export const useProjectDetail = (projectId: number) => {
+  //fetch project details without file content
+  const { data: accessToken } = useAccessToken();
+  
   return useQuery<Project, Error>(
     ['project', projectId],
     async () => {
@@ -61,7 +232,7 @@ export const useProjectDetail = (projectId: number) => {
     },
     {
       enabled: !!accessToken,
-      retry: (failureCount, error) => {
+      retry: (failureCount, error: Error) => {
         // Don't retry on 404 errors
         if (error.message === 'Project not found') {
           return false;
@@ -69,8 +240,11 @@ export const useProjectDetail = (projectId: number) => {
         // Retry up to 3 times for other errors
         return failureCount < 3;
       },
-      retryOnMount: false, // Don't retry on component mount if we already have data
-      refetchOnWindowFocus: false, // Don't refetch on window focus
+      retryOnMount: true, // Don't retry on component mount if we already have data
+      refetchOnWindowFocus: true, // Don't refetch on window focus
+      staleTime: 60000,
+      refetchInterval: 60000
+
     }
   );
 };
@@ -103,8 +277,8 @@ export const useUpdateProject = () => {
 
 export const useDeleteProject = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>(
-    (id) => api.delete(`/projects/${id}/`).then(() => {}),
+  return useMutation<void, Error, string>(
+    (id) => api.delete(`/projects/${id}/`).then(() => { }),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('projects');
@@ -113,25 +287,69 @@ export const useDeleteProject = () => {
   );
 };
 
+export const useMultipleFileDetails = (fileIds: number[]) => {
+  const { data: accessToken } = useAccessToken();
+
+  return useQuery<File[]>(
+    ['multipleFileDetails', fileIds],
+    async () => {
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+      const filePromises = fileIds.map(id =>
+        api.get(`/files/${id}/`)
+          .then(res => res.data)
+          .catch(error => {
+            console.warn(`Failed to fetch file with id ${id}:`, error);
+            return null; // Return null for unfetchable files
+          })
+      );
+      const results = await Promise.all(filePromises);
+      return results.filter((file): file is File => file !== null); // Filter out null results
+    },
+    {
+      enabled: !!accessToken && fileIds.length > 0,
+      retry: (failureCount, error) => {
+        if (error.message === 'No access token available') {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      retryOnMount: false,
+      refetchOnWindowFocus: false,
+    }
+  );
+};
 
 export const useFileDetails = (fileId: number) => {
-  return useQuery<File>(['fileDetails', fileId], () => 
+  const { data: accessToken } = useAccessToken();
+  return useQuery<File>(['fileDetails', fileId], () =>
     api.get(`/files/${fileId}/`).then(res => res.data),
     {
-      enabled: !!fileId // Only run the query if fileId is provided
+      enabled: !!accessToken && !!fileId, // Only run the query if fileId and tokenis provided
+      retry: (failureCount, error) => {
+        // Don't retry on 404 errors
+        if (error.message === 'Project not found') {
+          return false;
+        }
+        // Retry up to 3 times for other errors
+        return failureCount < 3;
+      },
+      retryOnMount: false, // Don't retry on component mount if we already have data
+      refetchOnWindowFocus: false, // Don't refetch on window focus
     }
   );
 };
 
 export const useCreateFile = () => {
   const queryClient = useQueryClient();
-  return useMutation<File, Error, { projectId: number; file: FormData }>(
-    ({ projectId, file }) => api.post(`/files/`, file, {
+  return useMutation<File, Error, { id: number; file: FormData }>(
+    ({ id, file }) => api.post(`/files/`, file, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {
       onSuccess: (data, variables) => {
-        queryClient.invalidateQueries(['projectFiles', variables.projectId]);
+        queryClient.invalidateQueries(['projectFiles', variables.id]);
       },
     }
   );
@@ -140,7 +358,7 @@ export const useCreateFile = () => {
 export const useUpdateFile = () => {
   const queryClient = useQueryClient();
   return useMutation<File, Error, { id: number; data: FormData }>(
-    ({ id, data }) => api.put(`/files/${id}/`, data, {
+    ({ id, data }) => api.patch(`/files/${id}/`, data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {
@@ -155,7 +373,7 @@ export const useUpdateFile = () => {
 export const useDeleteFile = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, { id: number; projectId: number }>(
-    ({ id }) => api.delete(`/files/${id}/`).then(() => {}),
+    ({ id }) => api.delete(`/files/${id}/`).then(() => { }),
     {
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(['projectFiles', variables.projectId]);

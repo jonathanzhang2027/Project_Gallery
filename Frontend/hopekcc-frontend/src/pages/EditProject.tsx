@@ -75,8 +75,6 @@ const ProjectEditor: React.FC = () => {
     }).filter(file => typeof file !== 'string');
   }, [fileDetailResults]);
   
-  // console.log(fetchedFileContents)
-
   //data for display
   const [title, setTitle] = useState(project?.name || '')
   const [description, setDescription] = useState(project?.description || '')
@@ -87,21 +85,24 @@ const ProjectEditor: React.FC = () => {
     fetchedFileContents.find(file => file.id === activeFileID),
     [fetchedFileContents, activeFileID]
   );
+  const [localFiles, setLocalFiles] = useState(fetchedFileContents || []);
+
   console.log(activeFile?.updated_at)
-  const [error, setError] = useState<string | null>(null);
+  
   
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { handleFileSave } = useFileOperations(projectId);
   const preview = useMemo(() => {
-    if (fetchedFileContents && fetchedFileContents.length > 0) {
-      return generatePreview(fetchedFileContents, activeFileID);
+    if (localFiles && localFiles.length > 0) {
+      return generatePreview(localFiles, activeFileID);
     }
     return '';
-  }, [fetchedFileContents, activeFileID]);
+  }, [localFiles, activeFileID]);
 
 
   const handleNavigate = (filename: string) => {
@@ -112,6 +113,17 @@ const ProjectEditor: React.FC = () => {
   };
 
   const onSave = useCallback(async (content: string) => {
+    const newLocalFiles = localFiles.map(file => {
+      if (file.id === activeFileID) {
+        return {
+          ...file,
+          content: content,
+        };
+      }
+      return file
+    });
+    setLocalFiles(newLocalFiles);
+
     await handleFileSave(activeFileID, content);
   }, [handleFileSave, activeFileID]);
 

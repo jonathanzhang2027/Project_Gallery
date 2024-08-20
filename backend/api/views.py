@@ -142,7 +142,132 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
     
     return JsonResponse({'success': True})
 
+@csrf_exempt
+def rename_file(request, project_id, file_id):
+    # Get the project and file based on provided IDs
+    project = get_object_or_404(Project, id=project_id)
+    file = get_object_or_404(File, id=file_id, project=project)
+    
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
 
+    if request.method == 'POST':
+        try:
+            # Parse the JSON request body
+            data = json.loads(request.body)
+            new_file_name = data.get('new_file_name')
+
+            # Check if the new file name is provided
+            if not new_file_name:
+                return JsonResponse({'error': 'New file name is required'}, status=400)
+
+            # Rename the file (updating the database record)
+            file.file_name = new_file_name
+            file.save()
+
+            return JsonResponse({'success': True, 'new_file_name': file.file_name}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def rename_project_name(request, project_id):
+    # Get the project and file based on provided IDs
+    project = get_object_or_404(Project, id=project_id)
+        
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            # Parse the JSON request body
+            data = json.loads(request.body)
+            new_project_name = data.get('new_project_name')
+
+            # Check if the new file name is provided
+            if not new_project_name:
+                return JsonResponse({'error': 'New project name is required'}, status=400)
+
+            # Rename the file (updating the database record)
+            project.name = new_project_name
+            project.save()
+
+            return JsonResponse({'success': True, 'new_project_name': project.name}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def change_project_description(request, project_id):
+    # Get the project and file based on provided IDs
+    project = get_object_or_404(Project, id=project_id)
+        
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            # Parse the JSON request body
+            data = json.loads(request.body)
+            new_project_description = data.get('new_project_description')
+
+            # Check if the new file name is provided
+            if not new_project_description:
+                return JsonResponse({'error': 'New project description is required'}, status=400)
+
+            # Rename the file (updating the database record)
+            project.description = new_project_description
+            project.save()
+
+            return JsonResponse({'success': True, 'new_project_description': project.description}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@csrf_exempt
+def create_empty_file(request, project_id):
+    # Get the project and file based on provided IDs
+    project = get_object_or_404(Project, id=project_id)
+        
+    # Placeholder for Auth0 user check
+    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
+    if project.user != temp_user:
+        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            # Parse the JSON request body
+            data = json.loads(request.body)
+            file_name = data.get('file_name')
+            path = default_storage.save('uploads/' + file_name)
+            file_url = default_storage.url(path)
+            # Check if the new file name is provided
+            if not file_name:
+                return JsonResponse({'error': 'File Name is required'}, status=400)
+
+            # Rename the file (updating the database record)
+            new_file = File.objects.create(project = project, file_name = file_name, file_url = file_url)
+            project.save()
+
+            return JsonResponse({'success': True, 'file_id': new_file.id, 'file_name': new_file.file_name}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
 # still need: 
 # view for renaming file (connect to frontend) --> file editor
 # view for changing / updating file contents --> file editor
@@ -154,7 +279,6 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
 
 # view for creating project --> file editor
 # Auth0 implementation in everything
-
 
 # --------------------------- for testing only ---------------------------
 

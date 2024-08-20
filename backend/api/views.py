@@ -163,7 +163,7 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
     
     return JsonResponse({'success': True})
 
-# for testing backend view only
+# for testing DJANGO backend view only
 def display_user_projects_home(request):
     # Placeholder for Auth0 user check
     temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check

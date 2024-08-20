@@ -1,26 +1,22 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect} from 'react';
 import { File } from "../../utils/types";
-import { useFileOperations } from '../../utils/api';
 interface EditorProps {
   activeFile?: File;
   onSave: (content: string) => void;
 }
-const areEqual = (prevProps: EditorProps, nextProps: EditorProps) => {
-  return prevProps.activeFile?.id === nextProps.activeFile?.id &&
-         prevProps.activeFile?.content === nextProps.activeFile?.content &&
-         prevProps.onSave === nextProps.onSave;
-};
+
 export const Editor: React.FC<EditorProps> =  React.memo(({ activeFile, onSave }) => {
   
   const [localContent, setLocalContent] = useState(activeFile?.content || '');
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalContent(e.target.value);
   };
+
   useEffect(() => {
     if (activeFile) {
       setLocalContent(activeFile.content || '');
     }
-  }, [activeFile]);
+  }, [activeFile?.id]);
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const saveContent = () => {
@@ -43,7 +39,7 @@ export const Editor: React.FC<EditorProps> =  React.memo(({ activeFile, onSave }
       onKeyDown={handleKeyDown}
     />
   );
-}, areEqual);
+}, );
 
 
 Editor.displayName = 'Editor';

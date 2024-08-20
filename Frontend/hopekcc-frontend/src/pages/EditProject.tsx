@@ -12,7 +12,7 @@ import { useProjectDetail, useMultipleFileDetails, useUpdateFile } from '../util
 import { useFileOperations } from '../utils/api';
 import {mapProject, mapFile, mapFiles, mapFileRequest} from "../utils/mappers";
 
-const generatePreview = (files: File[], activeFileID :File["id"]): string => {
+const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   const htmlFile = files.find(file => file.id === activeFileID);
   const cssFiles = files.filter(file => file.file_name.endsWith('.css'));
   const jsFiles = files.filter(file => file.file_name.endsWith('.js'));
@@ -29,6 +29,15 @@ const generatePreview = (files: File[], activeFileID :File["id"]): string => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Project Preview</title>
         <style>${cssContent}</style>
+        <script>
+          document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href) {
+              e.preventDefault();
+              const filename = e.target.getAttribute('href');
+              window.parent.postMessage({ type: 'navigate', file: filename }, '*');
+            }
+          });
+        </script>
       </head>
       <body>
         ${htmlContent}

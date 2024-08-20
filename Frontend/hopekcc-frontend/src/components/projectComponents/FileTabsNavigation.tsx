@@ -35,7 +35,6 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
     await handleDelete(fileId, filename);
   };
 
-
   const onRename = async (fileId: number, newName: string) => {
     await handleRename(fileId, newName);
   };

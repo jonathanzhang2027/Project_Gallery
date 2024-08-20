@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileDisplayButton, AddButton, DeleteButton, RenameButton, UploadButton } from './Buttons';
 import {File} from '../../utils/types'
-import { useDeleteFile, useCreateFile, useUpdateFile } from '../../utils/api';
-import { mapFileToApiRequest } from '../../utils/mappers';
-import { isValidFileName } from '../../utils/utils';
-import { useQueryClient } from 'react-query';
+import { useFileOperations } from '../../utils/api';
 
 interface FileTabsNavigationProps {
   projectId: number;
@@ -27,93 +24,41 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   projectId,
   files,
   activeFileID,
-  onFileSelect,
-  onError,
+  onFileSelect
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const navigationRef = useRef<HTMLDivElement>(null);
 
-  
+  const { handleDelete, handleRename, handleAdd, handleUpload} = useFileOperations(projectId);
 
-  const createFileMutation = useCreateFile();
-  const updateFileMutation = useUpdateFile();
-  const deleteFileMutation = useDeleteFile();
-  const queryClient = useQueryClient();
-
-  
-  const handleDelete = async (fileId: number, filename: string) => {
-    if (confirm(`Are you sure you want to delete ${filename}?`)) {
-      try {
-        await deleteFileMutation.mutateAsync({ id: fileId, projectId });
-        queryClient.invalidateQueries(['project', projectId]);
-      } catch (error) {
-        console.error('Error deleting file:', error);
-        onError('Failed to delete file. Please try again.');
-      }
-    }
+  const onDelete = async (fileId: number, filename: string) => {
+    await handleDelete(fileId, filename);
   };
 
-  const handleRename = async (fileId: number, newName: string) => {
-    //Actually rename the file via api
-    try {
-      const updatedFile = mapFileToApiRequest({ file_name: newName });
-      await updateFileMutation.mutateAsync({ id: fileId, data: updatedFile });
-      queryClient.invalidateQueries(['project', projectId]);
-    } catch (error) {
-      console.error('Error renaming file:', error);
-      onError('Failed to rename file. Please try again.');
-    }
-    setIsRenaming(false);
-  };
 
-  const handleFileAdd = async () => {
+  const onRename = async (fileId: number, newName: string) => {
+    await handleRename(fileId, newName);
+  };
+  const onAdd = async () => {
     const newFileName = prompt('Enter new file name:');
     if (newFileName) {
-      const { isValid, message } = isValidFileName(newFileName);
-      if (isValid) {
-        try {
-          const newFile = mapFileToApiRequest({ 
-            project: projectId,
-            file_name: newFileName,
-            content: ' ',
-          });
-          await createFileMutation.mutateAsync({ id:projectId, file: newFile });
-          queryClient.invalidateQueries(['project', projectId]);
-        } catch (error) {
-          console.error('Error adding file:', error);
-          onError('Failed to add file. Please try again.');
-        }
-      } else {
-        onError(message);
-      }
+      await handleAdd(newFileName);
     }
   };
 
-  const handleFileUpload = async () => {
-    try {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          const { isValid, message } = isValidFileName(file.name);
-          if (isValid) {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('project', projectId.toString());
-            await createFileMutation.mutateAsync({ id:projectId, file: formData });
-            queryClient.invalidateQueries(['project', projectId]);
-          } else {
-            onError(message);
-          }
-        }
-      };
-      input.click();
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      onError('Failed to upload file. Please try again.');
-    }
+  const onUpload = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        await handleUpload(file);
+      }
+    };
+    input.click();
   };
+  
+  
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,18 +80,18 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
       className={'flex flex-col bg-gray-200 transition-all duration-300 ease-in-out w-1/2 overflow-y-auto'}
     >
       <FileToolbar 
-        onFileAdd={handleFileAdd} 
-        onFileDelete={() => handleDelete(activeFileID!, files.find(file => file.id === activeFileID)?.file_name!)} 
+        onFileAdd={onAdd} 
+        onFileDelete={() => onDelete(activeFileID, files.find(file => file.id === activeFileID)?.file_name!)} 
         onRenameClick={() => setIsRenaming(true)}
         activeFileID={activeFileID} 
-        onFileUpload={handleFileUpload}
+        onFileUpload={onUpload}
       />
       {files.map((file) => (
         <div key={file.id} className="flex items-center">
           <FileDisplayButton
             file={file}
             onFileSelect={onFileSelect}
-            onRename={handleRename}
+            onRename={onRename}
             onCancelRename={() => setIsRenaming(false)}
             onDoubleClick={() => setIsRenaming(true)}
             isActive={activeFileID === file.id}

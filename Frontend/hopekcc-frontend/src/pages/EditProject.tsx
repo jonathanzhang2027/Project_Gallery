@@ -9,6 +9,7 @@ import { useParams } from 'react-router-dom';
 
 import { File} from "../utils/types" 
 import { useProjectDetail, useMultipleFileDetails, useUpdateFile } from '../utils/api';
+import { useFileOperations } from '../utils/api';
 import {mapProject, mapFile, mapFiles, mapFileRequest} from "../utils/mappers";
 
 const generatePreview = (files: File[], activeFileID :File["id"]): string => {
@@ -39,20 +40,15 @@ const generatePreview = (files: File[], activeFileID :File["id"]): string => {
 
 const ProjectEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const projectId = Number(id)
-  //get real project data
-  if (!projectId) {
-    return (
-      <div>no project id</div>
-    )
-  }
+  const projectId = Number(id);
   const { data } = useProjectDetail(projectId);
   const project = data ? mapProject(data) : null;
+  
   // Use useMemo to create a stable array of file IDs
   const fileIds = useMemo(() => {
     return project?.files?.map(file => file.id) || [];
   }, [project]);
-  const { data: files} = useMultipleFileDetails(fileIds);
+  const { data: files } = useMultipleFileDetails(fileIds);
   const FetchedFiles = files ? mapFiles(files) : [];
 
   //data for display

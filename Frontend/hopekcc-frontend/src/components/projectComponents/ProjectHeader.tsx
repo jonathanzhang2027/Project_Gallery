@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface ProjectHeaderProps {
   projectName: string;
-  projectId: string;
+  projectId: number;
 }
 
 const ProjectHeader: React.FC<ProjectHeaderProps> = ({ projectName, projectId}) => {

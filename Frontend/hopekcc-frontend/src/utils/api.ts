@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQueries, useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
 import { File, Project } from './types';
 import { isValidFileName } from './utils';
+import { mapFileToApiRequest } from './mappers';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -109,11 +110,9 @@ export const useFileOperations = (projectId: number) => {
     }));
 
     try {
-      const formData = new FormData();
-      formData.append('file_name', newFileName);
-      formData.append('project', projectId.toString());
-      formData.append('content', ' ');
-      const createdFile = await createFileMutation.mutateAsync({ id: projectId, file: formData });
+      
+      const newFile = mapFileToApiRequest({file_name: newFileName, project: projectId, content: ' '});
+      const createdFile = await createFileMutation.mutateAsync({ id: projectId, file: newFile });
       
       // Update the optimistic file with the real data
       queryClient.setQueryData(['project', projectId], (old: any) => ({
@@ -180,12 +179,44 @@ export const useFileOperations = (projectId: number) => {
       return null; // Indicate failed upload
     }
   };
+  const handleFileSave = async (fileId: number, content: string) => {
+    // Optimistically update the file content
+    queryClient.setQueryData(['fileDetails', fileId], (oldData: any) => ({
+      ...oldData,
+      content: content
+    }));
 
+    try {
+      const file = queryClient.getQueryData<File>(['fileDetails', fileId]);
+      if (!file) {
+        throw new Error('File not found');
+      }
+
+      const updatedFile = { ...file, content };
+      const formData = mapFileToApiRequest(updatedFile);
+      await updateFileMutation.mutateAsync({ id: fileId, data: formData });
+
+      // Update the project cache to reflect the change in the file's updated_at timestamp
+      queryClient.setQueryData(['project', projectId], (oldProject: any) => ({
+        ...oldProject,
+        files: oldProject.files.map((f: File) => 
+          f.id === fileId ? { ...f, updated_at: new Date().toISOString() } : f
+        )
+      }));
+
+    } catch (err) {
+      // If the update fails, revert the optimistic update
+      queryClient.invalidateQueries(['fileDetails', fileId]);
+      setError(`Failed to save file`);
+      throw err; // Re-throw the error so the component can handle it if needed
+    }
+  };
   return {
     handleDelete,
     handleRename,
     handleAdd,
     handleUpload,
+    handleFileSave,
     error,
     setError,
   };
@@ -290,34 +321,18 @@ export const useDeleteProject = () => {
 export const useMultipleFileDetails = (fileIds: number[]) => {
   const { data: accessToken } = useAccessToken();
 
-  return useQuery<File[]>(
-    ['multipleFileDetails', fileIds],
-    async () => {
-      if (!accessToken) {
-        throw new Error('No access token available');
-      }
-      const filePromises = fileIds.map(id =>
-        api.get(`/files/${id}/`)
-          .then(res => res.data)
-          .catch(error => {
-            console.warn(`Failed to fetch file with id ${id}:`, error);
-            return null; // Return null for unfetchable files
-          })
-      );
-      const results = await Promise.all(filePromises);
-      return results.filter((file): file is File => file !== null); // Filter out null results
-    },
-    {
-      enabled: !!accessToken && fileIds.length > 0,
-      retry: (failureCount, error) => {
-        if (error.message === 'No access token available') {
-          return false;
+  return useQueries(
+    fileIds.map(id => ({
+      queryKey: ['fileDetails', id],
+      queryFn: async () => {
+        if (!accessToken) {
+          throw new Error('No access token available');
         }
-        return failureCount < 3;
+        const response = await api.get(`/files/${id}/`);
+        return response.data;
       },
-      retryOnMount: false,
-      refetchOnWindowFocus: false,
-    }
+      enabled: !!accessToken
+    }))
   );
 };
 

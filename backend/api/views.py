@@ -171,9 +171,9 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
 
 # for testing DJANGO backend view only
 def display_user_projects_home(request):
-    # Placeholder for Auth0 user check
-    temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check
-    projects = Project.objects.filter(user=temp_user)
+    # # Placeholder for Auth0 user check
+    # authenticate
+    projects = Project.objects
     return render(request, 'api/home.html', {'projects': projects})
 
 
@@ -319,7 +319,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     #TODO Add auth-0 authentication
     # permission_classes = [IsProjectOwnerOrReadOnly]
+    def list(self, request, *args, **kwargs):
+        logger.info("list called")
+        user, token = authenticate(request)
+        if not user:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+        
+        auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
 
+        # Filter projects by the Auth0 User ID
+        queryset = Project.objects.filter(auth0_user_id=auth0_user_id)
+
+        # Use the serializer to convert the queryset to JSON
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)

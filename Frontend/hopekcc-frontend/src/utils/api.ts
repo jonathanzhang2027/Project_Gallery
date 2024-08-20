@@ -26,6 +26,12 @@ export const useAccessToken = () => {
 };
 // Project hooks
 
+/**
+ * Custom hook for performing operations on a project.
+ * 
+ * @param projectId - The ID of the project.
+ * @returns An object containing functions for handling project operations, as well as error state and setter.
+ */
 export const useProjectOperations = (projectId: number) => {
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();

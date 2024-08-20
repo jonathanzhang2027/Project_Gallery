@@ -5,8 +5,8 @@ interface File {
   file_url: string;
   created_at: string;
   updated_at: string;
-  content?: string;
-  file?: globalThis.File;  // Add this line to include a built-in File object
+  content?: string;  //used for displaying content in the editor
+  file?: globalThis.File;  // used for transforming content to actual file
 }
 
 interface Project {

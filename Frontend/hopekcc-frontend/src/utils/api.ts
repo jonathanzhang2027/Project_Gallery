@@ -180,35 +180,39 @@ export const useFileOperations = (projectId: number) => {
     }
   };
   const handleFileSave = async (fileId: number, content: string) => {
+    const originalFile = queryClient.getQueryData<File>(['fileDetails', fileId]);
+    if (!originalFile) {
+      throw new Error('File not found');
+    }
+  
     // Optimistically update the file content
     queryClient.setQueryData(['fileDetails', fileId], (oldData: any) => ({
       ...oldData,
       content: content
     }));
-
+  
+    // Optimistically update the project cache to reflect the change in the file's updated_at timestamp
+    queryClient.setQueryData(['project', projectId], (oldProject: any) => ({
+      ...oldProject,
+      files: oldProject.files.map((f: File) => 
+        f.id === fileId ? { ...f, updated_at: new Date().toISOString() } : f
+      )
+    }));
+  
     try {
-      const file = queryClient.getQueryData<File>(['fileDetails', fileId]);
-      if (!file) {
-        throw new Error('File not found');
-      }
-
-      const updatedFile = { ...file, content };
+      const updatedFile = { ...originalFile, content };
       const formData = mapFileToApiRequest(updatedFile);
       await updateFileMutation.mutateAsync({ id: fileId, data: formData });
-
-      // Update the project cache to reflect the change in the file's updated_at timestamp
-      queryClient.setQueryData(['project', projectId], (oldProject: any) => ({
-        ...oldProject,
-        files: oldProject.files.map((f: File) => 
-          f.id === fileId ? { ...f, updated_at: new Date().toISOString() } : f
-        )
-      }));
-
-    } catch (err) {
-      // If the update fails, revert the optimistic update
-      queryClient.invalidateQueries(['fileDetails', fileId]);
-      setError(`Failed to save file`);
-      throw err; // Re-throw the error so the component can handle it if needed
+  
+      return true; // Indicate successful save
+    } catch (error) {
+      // Revert optimistic updates
+      queryClient.setQueryData(['fileDetails', fileId], originalFile);
+      queryClient.invalidateQueries(['project', projectId]);
+      
+      console.error('Error saving file:', error);
+      setError('Failed to save file. Please try again.');
+      return false; // Indicate failed save
     }
   };
   return {
@@ -331,7 +335,10 @@ export const useMultipleFileDetails = (fileIds: number[]) => {
         const response = await api.get(`/files/${id}/`);
         return response.data;
       },
-      enabled: !!accessToken
+      enabled: !!accessToken,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      
     }))
   );
 };

@@ -198,6 +198,7 @@ class FileViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def retrieve(self, request, *args, **kwargs):
+        # additionally fetch the content files in detail view
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         data = serializer.data
@@ -221,15 +222,15 @@ class FileViewSet(viewsets.ModelViewSet):
         # The permission class will handle ownership check
 
         try:
+            # Create a mutable copy of the request data
+            mutable_data = request.data.copy()
+
             if file:
                 file_url = update_file_in_gcs(file, instance.file_url)
-                request.data['file_url'] = file_url
-                request.data['file_name'] = file.name
-            else:
-                # Remove file_url from request.data if no new file is provided
-                request.data.pop('file_url', None)
+                mutable_data['file_url'] = file_url
+
                 
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer = self.get_serializer(instance, data=mutable_data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 

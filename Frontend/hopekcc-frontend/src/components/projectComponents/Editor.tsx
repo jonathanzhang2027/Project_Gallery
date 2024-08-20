@@ -1,45 +1,39 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { File } from "../../utils/types";
-
+import { useFileOperations } from '../../utils/api';
 interface EditorProps {
-  files: File[];
-  activeFileID: number;
+  activeFile?: File;
   onSave: (content: string) => void;
 }
-
-export const Editor: React.FC<EditorProps> = React.memo(({ files, activeFileID, onSave }) => {
-  const [localContent, setLocalContent] = useState('');
-
-  // Memoize the initial content to avoid unnecessary updates
-  const initialContent = useMemo(
-    () => files.find(file => file.id === activeFileID)?.content || '',
-    [files, activeFileID]);
-
-  useEffect(() => {
-    setLocalContent(initialContent);
-  }, [initialContent]);
-
-  const saveContent = useCallback(() => {
-    if (localContent !== initialContent) {
-      onSave(localContent);
-    }
-  }, [localContent, initialContent, onSave]);
-
-  useEffect(() => {
-    const timer = setInterval(saveContent, 5000); // Save every 5 seconds
-    return () => clearInterval(timer);
-  }, [saveContent]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+const areEqual = (prevProps: EditorProps, nextProps: EditorProps) => {
+  return prevProps.activeFile?.id === nextProps.activeFile?.id &&
+         prevProps.activeFile?.content === nextProps.activeFile?.content &&
+         prevProps.onSave === nextProps.onSave;
+};
+export const Editor: React.FC<EditorProps> =  React.memo(({ activeFile, onSave }) => {
+  
+  const [localContent, setLocalContent] = useState(activeFile?.content || '');
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalContent(e.target.value);
-  }, []);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  };
+  useEffect(() => {
+    if (activeFile) {
+      setLocalContent(activeFile.content || '');
+    }
+  }, [activeFile]);
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const saveContent = () => {
+      if (activeFile && localContent !== activeFile.content) {
+        onSave(localContent);
+      }
+    };
+  
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       saveContent();
     }
-  }, [saveContent]);
+  };
 
   return (
     <textarea
@@ -49,6 +43,7 @@ export const Editor: React.FC<EditorProps> = React.memo(({ files, activeFileID, 
       onKeyDown={handleKeyDown}
     />
   );
-});
+}, areEqual);
+
 
 Editor.displayName = 'Editor';

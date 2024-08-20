@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
@@ -39,6 +39,10 @@ const generatePreview = (files: File[], activeFileID :File["id"]): string => {
 };
 
 const ProjectEditor: React.FC = () => {
+  /* 
+    The useProjectdetail gets file metadata(file name, file url, etc) and project metadata(name, description, etc)
+    The content fetched is handled in useMultipleFileDetails
+    */
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
   const { data } = useProjectDetail(projectId);
@@ -48,15 +52,33 @@ const ProjectEditor: React.FC = () => {
   const fileIds = useMemo(() => {
     return project?.files?.map(file => file.id) || [];
   }, [project]);
-  const { data: files } = useMultipleFileDetails(fileIds);
-  const FetchedFiles = files ? mapFiles(files) : [];
+
+  //Get actual file contents
+  //used in editor
+  const fileDetailResults = useMultipleFileDetails(fileIds)
+  
+  const fetchedFileContents = 
+  useMemo(() => {
+    return fileDetailResults.map(result => {
+      if (result.isLoading) return 'Loading...';
+      if (result.error) return 'Error loading file';
+      return mapFile(result.data);
+    }).filter(file => typeof file !== 'string');
+  }, [fileDetailResults]);
+  
+  // console.log(fetchedFileContents)
 
   //data for display
   const [title, setTitle] = useState(project?.name || '')
   const [description, setDescription] = useState(project?.description || '')
   const modifiedTime = project?.updated_at || '';
   //save when editable files change? TODO
-  const [activeFileID, setActiveFileID] = useState(FetchedFiles[0]?.id || 0);
+  const [activeFileID, setActiveFileID] = useState(fileIds[0] || 0);
+  const activeFile = useMemo(() => 
+    fetchedFileContents.find(file => file.id === activeFileID),
+    [fetchedFileContents, activeFileID]
+  );
+  console.log(activeFile?.updated_at)
   const [error, setError] = useState<string | null>(null);
   
   const [isEditing, setIsEditing] = useState<boolean>(true);
@@ -64,90 +86,65 @@ const ProjectEditor: React.FC = () => {
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
 
-
-  const updateFileMutation = useUpdateFile();
+  const { handleFileSave } = useFileOperations(projectId);
   const preview = useMemo(() => {
-    if (FetchedFiles && FetchedFiles.length > 0) {
-      return generatePreview(FetchedFiles, activeFileID);
+    if (fetchedFileContents && fetchedFileContents.length > 0) {
+      return generatePreview(fetchedFileContents, activeFileID);
     }
     return '';
-  }, [FetchedFiles, activeFileID]);
+  }, [fetchedFileContents, activeFileID]);
 
 
   const handleNavigate = (filename: string) => {
-    const file = FetchedFiles.find(file => file.file_name === filename);
+    const file = fetchedFileContents.find(file => file.file_name === filename);
     if (file) {
       setActiveFileID(file.id);
     }
   };
 
-  const handleFileSave = async (content: string) => {
-    //Saves active file
-    const file = FetchedFiles?.find(f => f.id === activeFileID);
-    if (!file) {
-        setError('File not found');
-        return;
-    }
-    try {
-        const updatedFile = { ...file, content };
-        const formData = mapFileRequest(updatedFile); 
-        await updateFileMutation.mutateAsync({ id: activeFileID, data: formData });
-    } catch (err) {
-        setError(`Failed to save file ${file.file_name}`);
-    }
-  };
+  const onSave = useCallback(async (content: string) => {
+    await handleFileSave(activeFileID, content);
+  }, [handleFileSave, activeFileID]);
 
-
-  const EditorMode = () => {
-    return (
-      <div className="flex flex-col h-screen bg-gray-100">
+  return (
+    <>
+    <ProjectNavBar isEditing={isEditing} title={title} onTitleChange={setTitle} modifiedTime={modifiedTime} Description={description} 
+      onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
+    {isCollapsedDesc? <> </>: <ProjectDescription description={description} onDescriptionChange={setDescription}/>}
+    
+    <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
-        { !isCollapsedFileTab && <FileTabsNavigation
-            projectId={projectId}
-            files={FetchedFiles}
-            activeFileID={activeFileID}
-            onFileSelect={setActiveFileID}
-            onError={setError}/>}
+        {isEditing && //Editor mode
+        <> 
+          { !isCollapsedFileTab && <FileTabsNavigation
+              projectId={projectId}
+              files={project?.files || []}
+              activeFileID={activeFileID}
+              onFileSelect={setActiveFileID}
+              onError={setError}/>}
 
-        <CollapseButton
-          onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
-          isCollapsed={isCollapsedFileTab}
-          collapseDirection="left"
-        />
+          <CollapseButton
+            onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
+            isCollapsed={isCollapsedFileTab}
+            collapseDirection="left"
+          />
+          
+          <Editor activeFile={activeFile} onSave={onSave}/>
 
-        <Editor files={FetchedFiles} activeFileID={activeFileID} onSave={handleFileSave}/>
-
-        <CollapseButton
-          onCollapseButtonClick={() => setIsCollapsedPreview(!isCollapsedPreview)}
-          isCollapsed={isCollapsedPreview}
-          collapseDirection="right"
-        />
-
+          <CollapseButton
+            onCollapseButtonClick={() => setIsCollapsedPreview(!isCollapsedPreview)}
+            isCollapsed={isCollapsedPreview}
+            collapseDirection="right"
+          />
+        </>}
+        
         {!isCollapsedPreview &&  
           <Preview 
             previewDoc={preview} 
             onNavigate={handleNavigate}/>}
       </div>
     </div>
-    )
-  }
-  const ViewMode = () => {
-    return (
-      <div className="flex flex-col h-screen bg-gray-100">
-      <div className="flex-grow flex">
-        <Preview  
-          previewDoc={preview} 
-          onNavigate={handleNavigate}/>
-      </div>
-    </div>
-    )
-  }
-  return (
-    <>
-    <ProjectNavBar isEditing={isEditing} title={title} onTitleChange={setTitle} modifiedTime={modifiedTime} Description={description} 
-      onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
-    {isCollapsedDesc? <> </>: <ProjectDescription description={description} onDescriptionChange={setDescription}/>}
-    {isEditing ? <EditorMode/> : <ViewMode/>}
+
     </>
   );
 };

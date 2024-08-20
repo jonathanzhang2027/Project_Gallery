@@ -63,24 +63,44 @@ def upload_file_to_gcs(file, project_id):
         return blob.public_url #return only the public url
     except exceptions.GoogleCloudError as e:
         raise Exception(f"Error uploading file to Google Cloud Storage: {str(e)}")
-def get_file_content_from_gcs(file_url, encoding='utf-8'):
+import base64
+
+def get_file_content_from_gcs(file_url):
     """Get file content from Google Cloud Storage"""
     try:
         blob = get_blob_from_url(file_url)
         if not blob.exists():
             raise FileNotFoundError(f"File not found: {file_url}")
         
+        # Download as bytes for all file types
+        content = blob.download_as_bytes()
+        
+        # Check if the content is text-based
         content_type = blob.content_type
         if content_type and content_type.startswith('text/'):
-            return blob.download_as_string().decode(encoding)
-        else:
-            return blob.download_as_bytes()
+            # Try to decode text files with UTF-8
+            try:
+                return {
+                    'content': content.decode('utf-8'),
+                    'encoding': 'utf-8',
+                    'is_base64': False
+                }
+            except UnicodeDecodeError:
+                # If decoding fails, encode as base64
+                return {
+                    'content': base64.b64encode(content).decode('ascii'),
+                    'encoding': 'base64',
+                    'is_base64': True
+                }
+        
+        # For binary files, always encode as base64
+        return {
+            'content': base64.b64encode(content).decode('ascii'),
+            'encoding': 'base64',
+            'is_base64': True
+        }
     except exceptions.GoogleCloudError as e:
         raise Exception(f"Error retrieving file content from Google Cloud Storage: {str(e)}")
-    except UnicodeDecodeError:
-        raise Exception(f"Error decoding file content. The file may not be a text file or may use a different encoding.")
-
-
 
 def update_file_in_gcs(file, old_file_url):
     """Update a file in Google Cloud Storage with a unique filename"""

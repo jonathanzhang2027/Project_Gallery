@@ -1,7 +1,9 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/projectComponents/Buttons";
 import { useAuth0 } from "@auth0/auth0-react";
+import axios from "axios";
+import { useMutation, useQueryClient } from "react-query";
 
 interface InputFieldProps {
   id: string;
@@ -62,44 +64,47 @@ const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const navigate = useNavigate();
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, user } = useAuth0();
+  const queryClient = useQueryClient();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    try {
-      const token = await getAccessTokenSilently(); // Get the token
-      console.log("Generated Token:", token);
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/create_project/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: projectName,
-            description: projectDescription,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error creating project:", errorData);
-        // Handle form errors, e.g., show error messages
-        return;
+  const createProject = async (projectData: {
+    name: string;
+    description: string;
+    auth0_user_id: string;
+  }) => {
+    const token = await getAccessTokenSilently();
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/projects/",
+      projectData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
+    return response.data;
+  };
 
-      const data = await response.json();
-      console.log("Project created successfully with ID:", data.project_id);
-      // Handle success, e.g., redirect to the project's detail page or show a success message
+  const mutation = useMutation(createProject, {
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries("projects");
+      navigate("/");
+    },
+  });
 
-      navigate(`/edit-project/${data.project_id}`);
-    } catch (error) {
-      console.error("Network error:", error);
-      // Handle network errors, e.g., show a notification
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (user && user.sub) {
+      mutation.mutate({
+        name: projectName,
+        description: projectDescription,
+        auth0_user_id: user.sub, // Include the Auth0 user ID
+      });
+    } else {
+      console.error("User ID not available");
+      // You might want to show an error message to the user here
     }
   };
 
@@ -136,14 +141,17 @@ const NewProject: React.FC = () => {
             <Button
               type="submit"
               className="px-4 py-2 bg-gray-400 text-gray-800 rounded hover:bg-gray-500"
+              disabled={mutation.isLoading}
             >
-              Create Project
+              {mutation.isLoading ? "Creating..." : "Create Project"}
             </Button>
           </div>
         </form>
+        {mutation.isError && (
+          <div>An error occurred: {mutation.error as string}</div>
+        )}
       </div>
     </div>
   );
 };
-
 export default NewProject;

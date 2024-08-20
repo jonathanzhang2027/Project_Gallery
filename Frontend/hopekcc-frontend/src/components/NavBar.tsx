@@ -88,7 +88,7 @@ export const ProjectNavBar = ({onSwitchView, onCollapseDesc, onTitleChange, isEd
     <nav className={'flex justify-between items-center bg-gray-500 text-white p-4 '}>
       <ul className={ulClass}>
         <li className={liClass}>
-          <Link to={`/project/${id}`} className="flex">
+          <Link to={`/projects/${id}`} className="flex">
             <ArrowLeft size={20} className="mx-2"/>
             <span>Back</span>
           </Link>

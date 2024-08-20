@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { FileData, Files } from "../components/projectComponents/templateFiles";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { FileTabsNavigation } from "../components/projectComponents/FileTabsNavigation";
 import { Editor } from "../components/projectComponents/Editor";
 import { Preview } from "../components/projectComponents/Preview";
@@ -7,235 +6,137 @@ import { CollapseButton } from "../components/projectComponents/Buttons";
 import { ProjectNavBar } from "../components/NavBar";
 import { ProjectDescription } from "../components/projectComponents/ProjectDescription";
 import { useParams } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 
-interface ProjectData {
-  id: number;
-  project_name: string;
-  project_description: string;
-  files: FileData[];
-}
+import { File } from "../utils/types";
+import { useProjectDetail, useMultipleFileDetails } from "../utils/api";
+import { useFileOperations } from "../utils/api";
+import { mapProject, mapFile } from "../utils/mappers";
+
+const generatePreview = (files: File[], activeFileID: File["id"]): string => {
+  const htmlFile = files.find((file) => file.id === activeFileID);
+  const cssFiles = files.filter((file) => file.file_name.endsWith(".css"));
+  const jsFiles = files.filter((file) => file.file_name.endsWith(".js"));
+
+  const htmlContent = htmlFile ? htmlFile.content : "";
+  const cssContent = cssFiles.map((file) => file.content).join("\n");
+  const jsContent = jsFiles.map((file) => file.content).join("\n");
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Project Preview</title>
+        <style>${cssContent}</style>
+        <script>
+          document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href) {
+              e.preventDefault();
+              const filename = e.target.getAttribute('href');
+              window.parent.postMessage({ type: 'navigate', file: filename }, '*');
+            }
+          });
+        </script>
+      </head>
+      <body>
+        ${htmlContent}
+        <script>${jsContent}</script>
+      </body>
+    </html>
+  `;
+};
 
 const ProjectEditor: React.FC = () => {
-  const { id: projectId } = useParams<{ id: string }>();
-  const [files, setFiles] = useState<Files>({});
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
+  /* 
+    The useProjectdetail gets file metadata(file name, file url, etc) and project metadata(name, description, etc)
+    The content fetched is handled in useMultipleFileDetails
+    */
+  const { id } = useParams<{ id: string }>();
+  const projectId = Number(id);
+  const { data } = useProjectDetail(projectId);
+  const project = data ? mapProject(data) : null;
 
-  const [modifiedTime, setModifiedTime] = useState<string>("2024");
-  const [activeFile, setActiveFile] = useState("index.html");
-  const [preview, setPreview] = useState<string>("");
+  // Use useMemo to create a stable array of file IDs
+  const fileIds = useMemo(() => {
+    return project?.files?.map((file) => file.id) || [];
+  }, [project]);
+
+  //Get actual file contents
+  //used in editor
+  const fileDetailResults = useMultipleFileDetails(fileIds);
+
+  const fetchedFileContents = useMemo(() => {
+    return fileDetailResults
+      .map((result) => {
+        if (result.isLoading) return "Loading...";
+        if (result.error) return "Error loading file";
+        return mapFile(result.data);
+      })
+      .filter((file) => typeof file !== "string");
+  }, [fileDetailResults]);
+
+  //data for display
+  const [title, setTitle] = useState(project?.name || "");
+  const [description, setDescription] = useState(project?.description || "");
+  const modifiedTime = project?.updated_at || "";
+  //save when editable files change? TODO
+  const [activeFileID, setActiveFileID] = useState(fileIds[0] || 0);
+  const activeFile = useMemo(
+    () => fetchedFileContents.find((file) => file.id === activeFileID),
+    [fetchedFileContents, activeFileID]
+  );
+  const [localFiles, setLocalFiles] = useState(fetchedFileContents || []);
+
+  console.log(activeFile?.updated_at);
+
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProjectData();
-  }, [projectId]);
-
-  useEffect(() => {
-    generatePreview();
-  }, [files, activeFile]);
-
-  // fetch project details when component mounts
-  const fetchProjectData = async () => {
-    const { getAccessTokenSilently } = useAuth0();
-    // Get the Auth0 token
-    const token = await getAccessTokenSilently();
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/project_details/${projectId}/`
-      ); // Temporary TODO: USE AUTH TOKEN AS AUTHORIAZSATION HEADER
-      if (!response.ok) throw new Error("Network response was not ok");
-
-      const data: ProjectData = await response.json();
-
-      setTitle(data.project_name);
-      setDescription(data.project_description);
-
-      const fileContents: Files = {};
-      data.files.forEach((file) => {
-        fileContents[file.file_name] = file;
-      });
-
-      setActiveFile(data.files[0]?.file_name || "");
-
-      setFiles(fileContents);
-      console.log(
-        `Fetched project data: ${data.project_name} ${data.project_description}`
-      );
-    } catch (error) {
-      console.error("Error fetching project data:", error);
+  const { handleFileSave } = useFileOperations(projectId);
+  const preview = useMemo(() => {
+    if (localFiles && localFiles.length > 0) {
+      return generatePreview(localFiles, activeFileID);
     }
-  };
+    return "";
+  }, [localFiles, activeFileID]);
 
-  const generatePreview = () => {
-    const htmlContent = files[activeFile]?.content || "";
-    const cssContent = files["styles.css"]?.content || "";
-    const jsFiles = Object.keys(files).filter((file) => file.endsWith(".js"));
-    const jsContent = jsFiles.map((file) => files[file].content).join("\n");
-
-    const combinedCode = `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${activeFile}</title>
-          <style>${cssContent}</style>
-          <base target="_self">
-        </head>
-        <body>
-          ${htmlContent}
-          <script>
-            ${jsContent}
-          </script>
-          <script>
-            document.body.addEventListener('click', (e) => {
-              if (e.target.tagName === 'A' && e.target.href) {
-                e.preventDefault();
-                const fileName = e.target.href.split('/').pop();
-                window.parent.postMessage({ type: 'navigate', file: fileName }, '*');
-              }
-            });
-          </script>
-        </body>
-      </html>
-    `;
-    setPreview(combinedCode);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const updatedFiles = {
-      ...files,
-      [activeFile]: { ...files[activeFile], content: e.target.value },
-    };
-    setFiles(updatedFiles);
-  };
-
-  const addNewFile = () => {
-    const fileName = prompt("Enter the name of the new file:");
-    if (fileName && !files[fileName]) {
-      const newFile: FileData = { id: 0, file_name: fileName, content: "" }; // TEMPORARY
-      setFiles({ ...files, [fileName]: newFile });
-      setActiveFile(fileName);
-    } else if (fileName !== null && files[fileName]) {
-      alert("A file with this name already exists.");
-    }
-  };
-
-  const deleteFile = async (fileId: number, filename: string) => {
-    if (confirm(`Are you sure you want to delete ${filename}?`)) {
-      try {
-        const url = `http://localhost:8000/api/delete_file/${projectId}/${fileId}/`;
-        console.log(`Deleting file using URL: ${url}`);
-
-        const response = await fetch(url, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to delete file: ${response.statusText}`);
-        }
-
-        fetchProjectData();
-      } catch (error) {
-        console.error("Error deleting file:", error);
-      }
-    }
-  };
-
-  const renameFile = (oldName: string, newName: string) => {
-    if (files[newName]) {
-      alert("A file with this name already exists.");
-      return;
-    }
-    const newFiles = { ...files };
-    newFiles[newName] = newFiles[oldName];
-    delete newFiles[oldName];
-    setFiles(newFiles);
-    if (activeFile === oldName) {
-      setActiveFile(newName);
-    }
-  };
-  const handleRenameTitle = (oldTitle: string, newTitle: string) => {
-    // if (!newTitle && oldTitle === newTitle){
-    //   return;
-    // }
-    setTitle(newTitle);
-    console.log(oldTitle, newTitle);
-  };
   const handleNavigate = (filename: string) => {
-    if (files[filename]) {
-      setActiveFile(filename);
+    const file = fetchedFileContents.find(
+      (file) => file.file_name === filename
+    );
+    if (file) {
+      setActiveFileID(file.id);
     }
   };
 
-  const handleUpload = () => {
-    console.log("uploading files");
-  };
+  const onSave = useCallback(
+    async (content: string) => {
+      const newLocalFiles = localFiles.map((file) => {
+        if (file.id === activeFileID) {
+          return {
+            ...file,
+            content: content,
+          };
+        }
+        return file;
+      });
+      setLocalFiles(newLocalFiles);
 
-  const EditorMode = () => {
-    return (
-      <div className="flex flex-col h-screen bg-gray-100">
-        <div className="flex-grow flex">
-          {!isCollapsedFileTab && (
-            <FileTabsNavigation
-              files={files}
-              activeFile={activeFile}
-              onFileSelect={setActiveFile}
-              onAddFile={addNewFile}
-              onDeleteFile={deleteFile}
-              onRenameFile={renameFile}
-              onUploadFile={handleUpload}
-            />
-          )}
+      await handleFileSave(activeFileID, content);
+    },
+    [handleFileSave, activeFileID]
+  );
 
-          <CollapseButton
-            onCollapseButtonClick={() =>
-              setIsCollapsedFileTab(!isCollapsedFileTab)
-            }
-            isCollapsed={isCollapsedFileTab}
-            collapseDirection="left"
-          />
-
-          <Editor
-            files={files}
-            activeFile={activeFile}
-            onFileChange={handleFileChange}
-          />
-
-          <CollapseButton
-            onCollapseButtonClick={() =>
-              setIsCollapsedPreview(!isCollapsedPreview)
-            }
-            isCollapsed={isCollapsedPreview}
-            collapseDirection="right"
-          />
-
-          {!isCollapsedPreview && (
-            <Preview previewDoc={preview} onNavigate={handleNavigate} />
-          )}
-        </div>
-      </div>
-    );
-  };
-  const ViewMode = () => {
-    return (
-      <div className="flex flex-col h-screen bg-gray-100">
-        <div className="flex-grow flex">
-          <Preview previewDoc={preview} onNavigate={handleNavigate} />
-        </div>
-      </div>
-    );
-  };
   return (
     <>
       <ProjectNavBar
         isEditing={isEditing}
         title={title}
-        onTitleChange={handleRenameTitle}
+        onTitleChange={setTitle}
         modifiedTime={modifiedTime}
         Description={description}
         onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)}
@@ -249,7 +150,46 @@ const ProjectEditor: React.FC = () => {
           onDescriptionChange={setDescription}
         />
       )}
-      {isEditing ? <EditorMode /> : <ViewMode />}
+
+      <div className="flex flex-col h-screen bg-gray-100">
+        <div className="flex-grow flex">
+          {isEditing && ( //Editor mode
+            <>
+              {!isCollapsedFileTab && (
+                <FileTabsNavigation
+                  projectId={projectId}
+                  files={project?.files || []}
+                  activeFileID={activeFileID}
+                  onFileSelect={setActiveFileID}
+                  onError={setError}
+                />
+              )}
+
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedFileTab(!isCollapsedFileTab)
+                }
+                isCollapsed={isCollapsedFileTab}
+                collapseDirection="left"
+              />
+
+              <Editor activeFile={activeFile} onSave={onSave} />
+
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedPreview(!isCollapsedPreview)
+                }
+                isCollapsed={isCollapsedPreview}
+                collapseDirection="right"
+              />
+            </>
+          )}
+
+          {!isCollapsedPreview && (
+            <Preview previewDoc={preview} onNavigate={handleNavigate} />
+          )}
+        </div>
+      </div>
     </>
   );
 };

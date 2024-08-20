@@ -106,6 +106,12 @@ export const useProjectOperations = (projectId: number) => {
   };
 };
 
+/**
+ * Custom hook for file operations.
+ * 
+ * @param projectId - The ID of the project.
+ * @returns An object containing functions for handling file operations, as well as error state.
+ */
 export const useFileOperations = (projectId: number) => {
   /*
     

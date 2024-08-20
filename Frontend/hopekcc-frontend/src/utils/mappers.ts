@@ -1,12 +1,18 @@
 import type { File, Project} from './types';
 
 // Mapper functions
+/**
+ * Maps an API response to a File object.
+ * 
+ * @param data - The API response data.
+ * @returns The mapped File object.
+ */
 function mapApiResponseToFile(data: any): File {
     let decodedContent = data?.content?.content || '';
     if (data?.content?.is_base64) {
         decodedContent = atob(decodedContent);
     }
-    
+
     return {
         id: data.id,
         project: data.project,

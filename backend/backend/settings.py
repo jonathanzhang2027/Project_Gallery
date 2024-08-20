@@ -10,15 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-import logging
 from pathlib import Path
 import os
 import firebase_admin
 from firebase_admin import credentials
 from dotenv import load_dotenv
-from datetime import timedelta
-
-import requests
 
 load_dotenv()
 

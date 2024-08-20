@@ -43,7 +43,6 @@ const Home = () => {
   const fetchProjects = async (): Promise<Project[]> => {
     // Get the Auth0 token
     const token = await getAccessTokenSilently();
-    console.log("Generated Token from Home:", token);
     // Fetch projects from the backend - REPLACE WITH SERVER LATER
     const response = await axios.get("http://127.0.0.1:8000/api/projects/", {
       headers: {

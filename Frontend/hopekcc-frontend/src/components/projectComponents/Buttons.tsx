@@ -34,8 +34,6 @@ interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'>{
 interface TitleDisplayButtonProps extends ButtonProps {
   title: string;
   onRename: (oldName:string, newName: string) => void;
-  onCancelRename: () => void;
-  isRenaming: boolean;
 }
 export const Button: React.FC<ButtonProps> = ({ onClick, className = '', children, type }) => (
   <button
@@ -139,11 +137,9 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
 
 export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
   title,
-  onClick,
-  onRename,
-  onCancelRename,
-  isRenaming, 
+  onRename
 }) => {
+  const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -156,9 +152,9 @@ export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
   const handleBlur = () => {
     if (newName && newName !== title) {
       onRename(title, newName);
-      onCancelRename();
+      setIsRenaming(false);
     } else {
-      onCancelRename();
+      setIsRenaming(false);
     }
   };
 
@@ -166,7 +162,7 @@ export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
     if (e.key === 'Enter') {
       handleBlur();
     } else if (e.key === 'Escape') {
-      onCancelRename();
+      setIsRenaming(false);
     }
   };
 
@@ -184,7 +180,7 @@ export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
         />
       ) : (
         <button
-          onClick={onClick}
+          onClick={() => setIsRenaming(true)}
           className="w-full text-left hover:bg-transparent hover:text-current flex items-center"
         >
           {title}

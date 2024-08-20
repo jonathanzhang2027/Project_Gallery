@@ -4,19 +4,22 @@ import { Clock, Calendar } from 'lucide-react';
 import { useProjectList } from "../utils/api.ts";
 import { Project } from "../utils/types.ts";
 import {mapProjects} from "../utils/mappers.ts";
-
+import {DeleteButton } from "../components/projectComponents/Buttons.tsx";
+import { useProjectOperations } from "../utils/api.ts"; 
 const ProjectList = ({ projects }: { projects: Project[] }) => {
   const ProjectHeader = () => {
     return (
       <div className="grid grid-cols-12 gap-4 items-center py-3 rounded-md transition-colors duration-150">
         <div className="col-span-3 text-left">Name</div>
-        <div className="col-span-5 text-left">Description</div>
+        <div className="col-span-4 text-left">Description</div>
         <div className="col-span-2 text-left flex">Last Updated <Clock size={14} className="m-1" /></div>
         <div className="col-span-2 text-left flex ">Created <Calendar size={14} className="m-1 " /> </div>
+        <div className="col-span-1 text-left flex ">  </div>
       </div>
     );
   };
   const ProjectItem = ({project}: {project: Project}) => {
+    const { handleProjectDelete } = useProjectOperations(project.id);
     return (
     <div key={project.id} className="grid grid-cols-12 gap-4 items-center py-3 hover:bg-gray-50 rounded-md transition-colors duration-150">
       <div className="col-span-3">
@@ -26,7 +29,7 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
           </Link>
         </h3>
       </div>
-      <div className="col-span-5 text-sm text-left text-gray-500 truncate">
+      <div className="col-span-4 text-sm text-left text-gray-500 truncate">
         {project.description}
       </div>
       <div className="col-span-2 flex items-center text-xs text-gray-400">
@@ -36,6 +39,15 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
       <div className="col-span-2 flex items-center text-xs text-gray-400">
         <span className="truncate">{new Date(project.created_at).toLocaleDateString()}</span>
       </div>
+      <div className="col-span-1  flex ">  
+        <DeleteButton
+            onClick={handleProjectDelete}
+            className="transition-colors duration-150"
+            aria-label="Delete project"
+          />
+          
+      </div>
+
     </div>
     )
   }

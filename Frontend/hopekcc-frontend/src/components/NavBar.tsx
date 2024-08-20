@@ -79,9 +79,8 @@ export const NavBar = () => {
 
 export const ProjectNavBar = ({onSwitchView, onCollapseDesc, onTitleChange, isEditing,  title, modifiedTime}
   : {onCollapseDesc:() => void, onSwitchView:() => void; onTitleChange:(oldTitle:string, newTitle:string) => void; 
-    isEditing:boolean, title: string, modifiedTime: string, Description: string }) => {
+    isEditing:boolean, title: string, modifiedTime: string}) => {
   
-  const [isEditingTitle, setEditingTitle] = useState(false);
   const { id } = useParams<{ id: string }>();
   const {isAuthenticated, user } = useAuth0();
   return (
@@ -104,14 +103,12 @@ export const ProjectNavBar = ({onSwitchView, onCollapseDesc, onTitleChange, isEd
           <h1 className=" text-3xl font-bold">
         
             <TitleDisplayButton 
-            title={title} onRename={onTitleChange}
-            onClick={() => setEditingTitle(true)}  onCancelRename={() => setEditingTitle(false)}
-            isRenaming={isEditingTitle}/>
+            title={title} onRename={onTitleChange}/>
           </h1>
 
           <li className="text-gray-400">
             <div>
-              <p>Last Modified: {modifiedTime}</p>
+              <p>Last Modified: {new Date(modifiedTime).toLocaleDateString()}</p>
             </div>
           </li>
       </ul>
@@ -120,7 +117,7 @@ export const ProjectNavBar = ({onSwitchView, onCollapseDesc, onTitleChange, isEd
           <button className="flex" onClick={onSwitchView}>
             {isEditing ? //Display view or Edit 
             <><Eye size={20} className="mx-2"/>View</> : 
-            <><Edit size={20} />Edit</>}
+            <><Edit size={20} className="mx-2"/>Edit</>}
           </button>
         </li>
         

@@ -31,8 +31,7 @@ export const useProjectOperations = (projectId: number) => {
   const queryClient = useQueryClient();
   const deleteProjectMutation = useDeleteProject();
   const updateProjectMutation = useUpdateProject();
-
-  const handleDelete = async () => {
+  const handleProjectDelete = async () => {
     if (!confirm(`Are you sure you want to delete this project?`)) return false;
 
     try {
@@ -47,32 +46,39 @@ export const useProjectOperations = (projectId: number) => {
     }
   };
 
-  const handleRename = async (newName: string) => {
-    if (!newName.trim() && isValidProjectName(newName).isValid) {
+  const handleProjectRename = async (oldName: string, newName: string) => {
+    if (!newName.trim() || !isValidProjectName(newName).isValid) {
       setError('Project name error: ' + isValidProjectName(newName).message);
       return false;
     }
-
+  
+    // Store the old project data
+    const oldProjectData = queryClient.getQueryData<Project>(['project', projectId]);
+  
     // Optimistically update the UI
     queryClient.setQueryData<Project | undefined>(['project', projectId], (old) => {
       if (!old) return undefined;
-      return { ...old, name: newName, };
+      return { ...old, name: newName };
     });
-
+  
     try {
       await updateProjectMutation.mutateAsync({ id: projectId, data: { name: newName }});
       return true; // Indicate successful rename
     } catch (error) {
       // Revert optimistic update
-      queryClient.invalidateQueries(['project', projectId]);
+      if (oldProjectData) {
+        queryClient.setQueryData(['project', projectId], oldProjectData);
+      } else {
+        queryClient.invalidateQueries(['project', projectId]);
+      }
+      
       console.error('Error renaming project:', error);
-      setError('Failed to rename project. Please try again.');
+      setError(`Failed to rename project from "${oldName}" to "${newName}". The name has been reverted. Please try again.`);
       return false; // Indicate failed rename
     }
   };
-
  
-  const handleChangeDescription = async (newDescription: string) => {
+  const handleProjectChangeDescription = async (newDescription: string) => {
     // Optimistically update the UI
     queryClient.setQueryData<Project | undefined>(['project', projectId], (old) => {
       if (!old) return undefined;
@@ -92,9 +98,9 @@ export const useProjectOperations = (projectId: number) => {
   };
 
   return {
-    handleDelete,
-    handleRename,
-    handleChangeDescription,
+    handleProjectDelete,
+    handleProjectRename,
+    handleProjectChangeDescription,
     error,
     setError,
   };
@@ -373,7 +379,7 @@ export const useCreateProject = () => {
 export const useUpdateProject = () => {
   const queryClient = useQueryClient();
   return useMutation<Project, Error, { id: number; data: Partial<Project> }>(
-    ({ id, data }) => api.put(`/projects/${id}/`, data).then(res => res.data),
+    ({ id, data }) => api.patch(`/projects/${id}/`, data).then(res => res.data),
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('projects');
@@ -411,6 +417,9 @@ export const useMultipleFileDetails = (fileIds: number[]) => {
       enabled: !!accessToken,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
+      staleTime: Infinity, // Keep the data fresh indefinitely
+      cacheTime: 1000 * 60 * 60, // Cache the data for 1 hour
+      retry: false, // Don't retry on failure
       
     }))
   );

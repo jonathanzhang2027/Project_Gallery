@@ -6,7 +6,7 @@ function mapApiResponseToFile(data: any): File {
     if (data?.content?.is_base64) {
         decodedContent = atob(decodedContent);
     }
-
+    
     return {
         id: data.id,
         project: data.project,

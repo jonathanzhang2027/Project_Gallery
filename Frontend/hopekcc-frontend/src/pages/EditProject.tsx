@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
 import { Editor } from '../components/projectComponents/Editor';
 import { Preview } from '../components/projectComponents/Preview';
@@ -8,7 +8,7 @@ import { ProjectDescription } from '../components/projectComponents/ProjectDescr
 import { useParams } from 'react-router-dom';
 
 import { File} from "../utils/types" 
-import { useProjectDetail, useMultipleFileDetails} from '../utils/api';
+import { useProjectDetail, useMultipleFileDetails, useProjectOperations} from '../utils/api';
 import { useFileOperations } from '../utils/api';
 import {mapProject, mapFile} from "../utils/mappers";
 
@@ -20,7 +20,7 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   const htmlContent = htmlFile ? htmlFile.content : '';
   const cssContent = cssFiles.map(file => file.content).join('\n');
   const jsContent = jsFiles.map(file => file.content).join('\n');
-
+  
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -56,12 +56,10 @@ const ProjectEditor: React.FC = () => {
   const projectId = Number(id);
   const { data } = useProjectDetail(projectId);
   const project = data ? mapProject(data) : null;
-  
   // Use useMemo to create a stable array of file IDs
   const fileIds = useMemo(() => {
     return project?.files?.map(file => file.id) || [];
   }, [project]);
-
   //Get actual file contents
   //used in editor
   const fileDetailResults = useMultipleFileDetails(fileIds)
@@ -74,28 +72,20 @@ const ProjectEditor: React.FC = () => {
       return mapFile(result.data);
     }).filter(file => typeof file !== 'string');
   }, [fileDetailResults]);
+
   
   //data for display
-  const [title, setTitle] = useState(project?.name || '')
-  const [description, setDescription] = useState(project?.description || '')
-  const modifiedTime = project?.updated_at || '';
-  //save when editable files change? TODO
   const [activeFileID, setActiveFileID] = useState(fileIds[0] || 0);
-  const activeFile = useMemo(() => 
-    fetchedFileContents.find(file => file.id === activeFileID),
-    [fetchedFileContents, activeFileID]
-  );
-  const [localFiles, setLocalFiles] = useState(fetchedFileContents || []);
+  let localFiles = useMemo(() => {
+    return fetchedFileContents;
+  }, [fetchedFileContents]);
 
-  console.log(activeFile?.updated_at)
-  
-  
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+  const {handleProjectRename, handleProjectChangeDescription, error:projectError} = useProjectOperations(projectId)
   const { handleFileSave } = useFileOperations(projectId);
   const preview = useMemo(() => {
     if (localFiles && localFiles.length > 0) {
@@ -104,34 +94,25 @@ const ProjectEditor: React.FC = () => {
     return '';
   }, [localFiles, activeFileID]);
 
-
   const handleNavigate = (filename: string) => {
     const file = fetchedFileContents.find(file => file.file_name === filename);
     if (file) {
       setActiveFileID(file.id);
     }
   };
-
   const onSave = useCallback(async (content: string) => {
-    const newLocalFiles = localFiles.map(file => {
-      if (file.id === activeFileID) {
-        return {
-          ...file,
-          content: content,
-        };
-      }
-      return file
-    });
-    setLocalFiles(newLocalFiles);
-
-    await handleFileSave(activeFileID, content);
+    try{
+      await handleFileSave(activeFileID, content);
+    }catch(e: any){
+      setError(e.message);
+    }
+    
   }, [handleFileSave, activeFileID]);
-
   return (
     <>
-    <ProjectNavBar isEditing={isEditing} title={title} onTitleChange={setTitle} modifiedTime={modifiedTime} Description={description} 
+    <ProjectNavBar isEditing={isEditing} title={project?.name || ''} onTitleChange={handleProjectRename} modifiedTime={project?.updated_at || 'NaN'}
       onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
-    {isCollapsedDesc? <> </>: <ProjectDescription description={description} onDescriptionChange={setDescription}/>}
+    {isCollapsedDesc? <> </>: <ProjectDescription description={project?.description || ''} onDescriptionChange={handleProjectChangeDescription}/>}
     
     <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
@@ -150,7 +131,7 @@ const ProjectEditor: React.FC = () => {
             collapseDirection="left"
           />
           
-          <Editor activeFile={activeFile} onSave={onSave}/>
+          <Editor activeFile={localFiles.find(file => file.id === activeFileID)} onSave={onSave}/>
 
           <CollapseButton
             onCollapseButtonClick={() => setIsCollapsedPreview(!isCollapsedPreview)}

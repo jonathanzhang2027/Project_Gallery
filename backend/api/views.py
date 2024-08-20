@@ -153,6 +153,7 @@ from .serializers import ProjectSerializer, FileSerializer
 from .permissions import IsProjectOwnerOrReadOnly
 from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
+from django.db import transaction
 import logging
 
 logger = logging.getLogger(__name__)
@@ -290,6 +291,36 @@ class ProjectViewSet(viewsets.ModelViewSet):
         data = serializer.data
         # The related files are already included in the serializer
         return Response(data)
+    
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        project_id = instance.id
+
+        # Get all related files
+        related_files = File.objects.filter(project_id=project_id)
+
+        # Delete files from Google Cloud Storage
+        gcs_deletion_errors = []
+        for file in related_files:
+            try:
+                delete_file_from_gcs(file.file_url)
+            except Exception as e:
+                gcs_deletion_errors.append(f"Error deleting {file.file_name} from GCS: {str(e)}")
+
+        # Delete related files from the database
+        deletion_count = related_files.delete()[0]
+
+        # Delete the project
+        self.perform_destroy(instance)
+
+        # Prepare response message
+        message = f"Project {project_id} and {deletion_count} related files have been deleted successfully."
+        if gcs_deletion_errors:
+            message += " However, there were issues deleting some files from Google Cloud Storage:"
+            message += " ".join(gcs_deletion_errors)
+        logger.info(message)
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 

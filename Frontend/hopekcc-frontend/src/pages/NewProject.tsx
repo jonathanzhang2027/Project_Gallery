@@ -1,5 +1,6 @@
 import React, { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../components/projectComponents/Buttons";
 import { useAuth0 } from "@auth0/auth0-react";
 
 interface InputFieldProps {
@@ -57,24 +58,6 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
   </div>
 );
 
-interface ButtonProps {
-  type: "button" | "submit";
-  onClick?: () => void;
-  className: string;
-  children: React.ReactNode;
-}
-
-const Button: React.FC<ButtonProps> = ({
-  type,
-  onClick,
-  className,
-  children,
-}) => (
-  <button type={type} onClick={onClick} className={className}>
-    {children}
-  </button>
-);
-
 const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -127,7 +110,7 @@ const NewProject: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-4">Create New Project</h2>
+        <h2 className="text-2xl font-bold mb-4 ">Create New Project</h2>
         <form onSubmit={handleSubmit}>
           <InputField
             id="projectName"
@@ -152,7 +135,7 @@ const NewProject: React.FC = () => {
             </Button>
             <Button
               type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-gray-400 text-gray-800 rounded hover:bg-gray-500"
             >
               Create Project
             </Button>

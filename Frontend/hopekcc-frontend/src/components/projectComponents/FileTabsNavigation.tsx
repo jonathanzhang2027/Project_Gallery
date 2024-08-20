@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Files } from './templateFiles';
-import { FileDisplayButton, AddButton, DeleteButton, RenameButton, UploadButton } from './buttons';
+import { FileDisplayButton, AddButton, DeleteButton, RenameButton, UploadButton } from './Buttons';
 
 
 
@@ -12,7 +12,6 @@ interface FileTabsNavigationProps {
   onDeleteFile: (fileId: number, filename: string) => void;
   onRenameFile: (oldName: string, newName: string) => void;
   onUploadFile: () => void;
-  isCollapsed: boolean;
 }
 
 interface FileToolbarProps {
@@ -31,8 +30,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   onAddFile,
   onDeleteFile,
   onRenameFile,
-  onUploadFile,
-  isCollapsed
+  onUploadFile
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const navigationRef = useRef<HTMLDivElement>(null);
@@ -60,9 +58,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   return (
     <div
       ref={navigationRef}
-      className={`flex flex-col bg-gray-200 transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-0 overflow-hidden' : 'w-1/4 overflow-y-auto'
-      }`}
+      className={'flex flex-col bg-gray-200 transition-all duration-300 ease-in-out w-1/2 overflow-y-auto'}
     >
       <FileToolbar 
         onAddFile={onAddFile} 

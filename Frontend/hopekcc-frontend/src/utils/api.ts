@@ -7,11 +7,23 @@ import { isValidFileName, isValidProjectName } from './utils';
 import { mapFileToApiRequest } from './mappers';
 
 const API_URL = 'http://127.0.0.1:8000/api';
-
 // Create an axios instance
-const api = axios.create({
-  baseURL: API_URL,
-});
+const api = (token:string | undefined) => {
+  if (token){
+    return (axios.create({
+      baseURL: API_URL,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }));
+  }else{
+    return (axios.create({
+      baseURL: API_URL
+    }));
+  }
+  
+}
+
 
 // Custom hook to get the access token
 
@@ -327,7 +339,7 @@ export const useProjectList = () => {
       if (!accessToken) {
         throw new Error('No access token available');
       }
-      const response = await api.get('/projects/', {
+      const response = await api(accessToken).get('/projects/', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       return response.data;
@@ -350,7 +362,7 @@ export const useProjectDetail = (projectId: number) => {
         throw new Error('No access token available');
       }
       try {
-        const response = await api.get(`/projects/${projectId}/`);
+        const response = await api(accessToken).get(`/projects/${projectId}/`);
         return response.data;
       } catch (error) {
         throw error;
@@ -377,9 +389,10 @@ export const useProjectDetail = (projectId: number) => {
 
 
 export const useCreateProject = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<Project, Error, Omit<Project, 'id' | 'created_at' | 'updated_at'>>(
-    (newProject) => api.post('/projects/', newProject).then(res => res.data),
+    (newProject) => api(accessToken).post('/projects/', newProject).then(res => res.data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('projects');
@@ -389,9 +402,10 @@ export const useCreateProject = () => {
 };
 
 export const useUpdateProject = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<Project, Error, { id: number; data: Partial<Project> }>(
-    ({ id, data }) => api.patch(`/projects/${id}/`, data).then(res => res.data),
+    ({ id, data }) => api(accessToken).patch(`/projects/${id}/`, data).then(res => res.data),
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('projects');
@@ -402,9 +416,10 @@ export const useUpdateProject = () => {
 };
 
 export const useDeleteProject = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<void, Error, number>(
-    (id) => api.delete(`/projects/${id}/`).then(() => { }),
+    (id) => api(accessToken).delete(`/projects/${id}/`).then(() => { }),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('projects');
@@ -423,7 +438,7 @@ export const useMultipleFileDetails = (fileIds: number[]) => {
         if (!accessToken) {
           throw new Error('No access token available');
         }
-        const response = await api.get(`/files/${id}/`);
+        const response = await api(accessToken).get(`/files/${id}/`);
         return response.data;
       },
       enabled: !!accessToken,
@@ -440,7 +455,7 @@ export const useMultipleFileDetails = (fileIds: number[]) => {
 export const useFileDetails = (fileId: number) => {
   const { data: accessToken } = useAccessToken();
   return useQuery<File>(['fileDetails', fileId], () =>
-    api.get(`/files/${fileId}/`).then(res => res.data),
+    api(accessToken).get(`/files/${fileId}/`).then(res => res.data),
     {
       enabled: !!accessToken && !!fileId, // Only run the query if fileId and tokenis provided
       retry: (failureCount, error) => {
@@ -458,9 +473,10 @@ export const useFileDetails = (fileId: number) => {
 };
 
 export const useCreateFile = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<File, Error, { id: number; file: FormData }>(
-    ({ id, file }) => api.post(`/files/`, file, {
+    ({ id, file }) => api(accessToken).post(`/files/`, file, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {
@@ -472,9 +488,10 @@ export const useCreateFile = () => {
 };
 
 export const useUpdateFile = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<File, Error, { id: number; data: FormData }>(
-    ({ id, data }) => api.patch(`/files/${id}/`, data, {
+    ({ id, data }) => api(accessToken).patch(`/files/${id}/`, data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {
@@ -487,9 +504,10 @@ export const useUpdateFile = () => {
 };
 
 export const useDeleteFile = () => {
+  const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<void, Error, { id: number; projectId: number }>(
-    ({ id }) => api.delete(`/files/${id}/`).then(() => { }),
+    ({ id }) => api(accessToken).delete(`/files/${id}/`).then(() => { }),
     {
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries(['projectFiles', variables.projectId]);

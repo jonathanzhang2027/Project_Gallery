@@ -66,7 +66,7 @@ const NewProject: React.FC = () => {
   const navigate = useNavigate();
   const { getAccessTokenSilently, user } = useAuth0();
   const queryClient = useQueryClient();
-
+  const [error, setError] = useState<string | null>(null);
   const createProject = async (projectData: {
     name: string;
     description: string;
@@ -96,12 +96,17 @@ const NewProject: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
     if (user && user.sub) {
-      mutation.mutate({
-        name: projectName,
-        description: projectDescription,
-        auth0_user_id: user.sub, // Include the Auth0 user ID
-      });
+      try {
+        mutation.mutate({
+          name: projectName,
+          description: projectDescription,
+          auth0_user_id: user.sub,
+        });
+      }catch(e){
+        setError(e.message);
+      }
     } else {
       console.error("User ID not available");
       // You might want to show an error message to the user here
@@ -148,8 +153,9 @@ const NewProject: React.FC = () => {
           </div>
         </form>
         {mutation.isError && (
-          <div>An error occurred: {mutation.error as string}</div>
+          <div>An error occurred: {error as string}</div>
         )}
+
       </div>
     </div>
   );

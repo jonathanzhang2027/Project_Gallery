@@ -21,7 +21,7 @@ from .authentication import JWTAuthentication
 def authenticate(request):
     auth = JWTAuthentication()
     try:
-        user, token = auth.authenticate(Request(request))
+        user, token = auth.authenticate(request)
     except AuthenticationFailed as e:
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
     except Exception as e:
@@ -186,7 +186,7 @@ def display_user_projects_home(request):
 '''
 
 from .serializers import ProjectSerializer, FileSerializer
-from .permissions import IsProjectOwnerOrReadOnly
+from .permissions import IsProjectOwner
 from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
 from django.db import transaction
@@ -204,7 +204,8 @@ class FileViewSet(viewsets.ModelViewSet):
     
     queryset = File.objects.all()
     serializer_class = FileSerializer
-    # permission_classes = [IsProjectOwnerOrReadOnly]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsProjectOwner]
     
     def create(self, request, *args, **kwargs):
         file = request.FILES.get('file')
@@ -318,8 +319,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    #TODO Add auth-0 authentication
-    # permission_classes = [IsProjectOwnerOrReadOnly]
+    #T ODO Add auth-0 authentication
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsProjectOwner]
     def list(self, request, *args, **kwargs):
         logger.info("list called")
         user, token = authenticate(request)
@@ -327,13 +329,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
         
         auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
-
+        
         # Filter projects by the Auth0 User ID
         queryset = Project.objects.filter(auth0_user_id=auth0_user_id)
 
         # Use the serializer to convert the queryset to JSON
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+   
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)

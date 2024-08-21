@@ -60,8 +60,7 @@ const ProjectEditor: React.FC = () => {
   const fileIds = useMemo(() => {
     return project?.files?.map((file) => file.id) || [];
   }, [project]);
-  //Get actual file contents
-  //used in editor
+  
   const fileDetailResults = useMultipleFileDetails(fileIds);
 
   const fetchedFileContents = useMemo(() => {
@@ -77,13 +76,13 @@ const ProjectEditor: React.FC = () => {
   
   //data for display
   const [activeFileID, setActiveFileID] = useState(fileIds[0] || 0);
-  const [localFiles, setLocalFiles] = useState<File[]>([]);
-  useEffect(() => {
-    setLocalFiles(fetchedFileContents);
-  }, [fetchedFileContents]);
-  // let localFiles = useMemo(() => {
-  //   return fetchedFileContents;
+  // const [localFiles, setLocalFiles] = useState<File[]>([]);
+  // useEffect(() => {
+  //   setLocalFiles(fetchedFileContents);
   // }, [fetchedFileContents]);
+  let localFiles = useMemo(() => {
+    return fetchedFileContents;
+  }, [fetchedFileContents]);
 
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);

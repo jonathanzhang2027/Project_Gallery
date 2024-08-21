@@ -116,6 +116,38 @@ const Home = () => {
   const projects = data || [];
   return (
     <div className="bg-gray-100  mx-auto px-4 py-8">
+      <div className="bg-gray-100 mx-auto px-4 py-8">
+        {/* Create Project Section */}
+        <div className="mb-6">
+          <h2 className="text-2xl text-left font-semibold mb-2 text-gray-800">
+            Create Project
+          </h2>
+          <div className="flex justify-center">
+            <div className="relative">
+              {/* Light blue rectangle background */}
+              <Link
+                to="/new-project"
+                className="relative bg-[#a8e9fd] py-3 px-6 text-center font-bold text-[#1d769f] text-lg block transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                style={{ width: "200px", height: "50px" }} // Set a fixed size for the button
+              >
+                New Project
+                {/* Rhombus border */}
+                <div
+                  className="absolute text-lg font-bold text-[#1d769f] border-4 border-[#1d769f] transform skew-x-[-10deg] overflow-hidden"
+                  style={{
+                    width: "200px",
+                    height: "50px",
+                    top: "0px",
+                    left: "0px",
+                  }}
+                ></div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Projects Section */}
       <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">
         Projects
       </h2>

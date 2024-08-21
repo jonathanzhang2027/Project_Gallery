@@ -1,28 +1,40 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, Edit, Upload, Trash, File as Fileimg, Eye, Download, ZoomIn, ZoomOut} from 'lucide-react'; //icons
-import {File} from "../../utils/types"
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Edit,
+  Upload,
+  Trash,
+  File as Fileimg,
+  Eye,
+  Download,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react"; //icons
+import { File } from "../../utils/types";
 // Base ButtonProps interface
 interface ButtonProps {
   onClick?: () => void;
   className?: string;
   children?: React.ReactNode;
+  title?: string;
   disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
 }
 
 // CollapseButton
-interface CollapseButtonProps extends Omit<ButtonProps, 'onClick'> {
+interface CollapseButtonProps extends Omit<ButtonProps, "onClick"> {
   onCollapseButtonClick: () => void;
   isCollapsed: boolean;
-  collapseDirection: 'left' | 'right';
+  collapseDirection: "left" | "right";
 }
 // DescriptionToggleButton
-interface EditingButtonProps extends Omit<ButtonProps, 'onClick'> {
+interface EditingButtonProps extends Omit<ButtonProps, "onClick"> {
   isEditing: boolean;
   onClick: () => void;
 }
 
-interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'>{
+interface FileDisplayButtonProps extends Omit<ButtonProps, "onClick"> {
   file: File;
   onFileSelect: (fileId: number) => void;
   onRename: (fileId: number, newName: string) => void;
@@ -33,32 +45,38 @@ interface FileDisplayButtonProps extends Omit<ButtonProps, 'onClick'>{
 }
 interface TitleDisplayButtonProps extends ButtonProps {
   title: string;
-  onRename: (oldName:string, newName: string) => void;
+  onRename: (oldName: string, newName: string) => void;
 }
-export const Button: React.FC<ButtonProps> = ({ onClick, className = '', children, type }) => (
+export const Button: React.FC<ButtonProps> = ({
+  onClick,
+  className = "",
+  children,
+  title,
+  type,
+}) => (
   <button
     className={`px-1 py-1 text-black hover:bg-gray-300  ${className}`}
     onClick={onClick}
+    title={title}
     type={type}
   >
     {children}
   </button>
 );
 
-
 export const CollapseButton: React.FC<CollapseButtonProps> = ({
   onCollapseButtonClick,
   isCollapsed,
-  collapseDirection
+  collapseDirection,
 }) => {
   const getCollapseIcon = () => {
     switch (collapseDirection) {
-      case 'left':
-        return isCollapsed ? <ArrowRight size={15}/> : <ArrowLeft size={15}/>;
-      case 'right':
-        return isCollapsed ? <ArrowLeft size={15}/> : <ArrowRight size={15}/>;
+      case "left":
+        return isCollapsed ? <ArrowRight size={15} /> : <ArrowLeft size={15} />;
+      case "right":
+        return isCollapsed ? <ArrowLeft size={15} /> : <ArrowRight size={15} />;
       default:
-        return isCollapsed ? <ArrowLeft size={15}/> : <ArrowRight size={15}/>;
+        return isCollapsed ? <ArrowLeft size={15} /> : <ArrowRight size={15} />;
     }
   };
 
@@ -66,6 +84,7 @@ export const CollapseButton: React.FC<CollapseButtonProps> = ({
     <Button
       onClick={onCollapseButtonClick}
       className="text-black bg-gray-300 hover:bg-gray-500"
+      title="collapse"
     >
       {getCollapseIcon()}
     </Button>
@@ -79,13 +98,13 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   onCancelRename,
   isActive,
   isRenaming,
-  onDoubleClick
+  onDoubleClick,
 }) => {
   const [newName, setNewName] = useState(file.file_name);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if ((isRenaming) && inputRef.current) {
+    if (isRenaming && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isRenaming]);
@@ -99,9 +118,9 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleBlur();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       onCancelRename();
     }
   };
@@ -109,7 +128,7 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
   return (
     <div
       className={`flex flex-grow px-4 py-2 text-left truncate ${
-        isActive ? 'bg-white' : 'hover:bg-gray-300'
+        isActive ? "bg-white" : "hover:bg-gray-300"
       }`}
       onDoubleClick={onDoubleClick}
     >
@@ -137,14 +156,14 @@ export const FileDisplayButton: React.FC<FileDisplayButtonProps> = ({
 
 export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
   title,
-  onRename
+  onRename,
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if ((isRenaming) && inputRef.current) {
+    if (isRenaming && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isRenaming]);
@@ -159,9 +178,9 @@ export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleBlur();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsRenaming(false);
     }
   };
@@ -186,55 +205,65 @@ export const TitleDisplayButton: React.FC<TitleDisplayButtonProps> = ({
           {title}
         </button>
       )}
-      </>
+    </>
   );
 };
 
-
-export const DeleteButton: React.FC<ButtonProps> = ({ onClick , className = ''}) => (
-  <Button
-    onClick={onClick}
-    className={`${className}`}
-  >
-    <Trash/>
+export const DeleteButton: React.FC<ButtonProps> = ({
+  onClick,
+  className = "",
+}) => (
+  <Button onClick={onClick} className={`${className}`} title="delete file">
+    <Trash />
   </Button>
 );
 
-
-export const AddButton: React.FC<ButtonProps> = ({ onClick , className = ''}) => (
-  <Button
-    onClick={onClick}
-    className={`${className}`}
-  >
-    <Fileimg/>
+export const AddButton: React.FC<ButtonProps> = ({
+  onClick,
+  className = "",
+}) => (
+  <Button onClick={onClick} className={`${className}`} title="add file">
+    <Fileimg />
   </Button>
 );
 
-export const RenameButton: React.FC<ButtonProps> = ({ onClick , className = '' }) => (
-  <Button onClick={onClick} className={`${className}`}>
-    <Edit/>
+export const RenameButton: React.FC<ButtonProps> = ({
+  onClick,
+  className = "",
+}) => (
+  <Button onClick={onClick} className={`${className}`} title="rename file">
+    <Edit />
   </Button>
 );
 
-export const UploadButton: React.FC<ButtonProps> = ({ onClick, className = ''}) => (
-  <Button onClick={onClick} className={`${className}`}>
-    <Upload/>
+export const UploadButton: React.FC<ButtonProps> = ({
+  onClick,
+  className = "",
+}) => (
+  <Button onClick={onClick} className={`${className}`} title="upload file">
+    <Upload />
   </Button>
 );
 
-
-export const DescriptionToggleButton: React.FC<EditingButtonProps> = ({ isEditing, onClick }) => (
+export const DescriptionToggleButton: React.FC<EditingButtonProps> = ({
+  isEditing,
+  onClick,
+}) => (
   <Button
     onClick={onClick}
     className="bg-gray-200 hover:bg-gray-300"
+    title="description"
   >
-    {isEditing ? 'Hide Description' : 'Show Description'}
+    {isEditing ? "Hide Description" : "Show Description"}
   </Button>
 );
 
-
-export const SwitchViewButton: React.FC<EditingButtonProps> = ({ isEditing, onClick, className = ''}) => (
-  <Button onClick={onClick} className={`${className}`}>
-    {isEditing ? <Eye/> : <Edit/>}
+export const SwitchViewButton: React.FC<EditingButtonProps> = ({
+  isEditing,
+  onClick,
+  className = "",
+}) => (
+  <Button onClick={onClick} className={`${className}`} title="toggle view">
+    {isEditing ? <Eye /> : <Edit />}
   </Button>
 );

@@ -110,7 +110,7 @@ export const FileToolbar: React.FC<FileToolbarProps> = ({
 }) => {
   return (
     <div className='text-black bg-gray-300 px-1 flex justify-start'>
-      <AddButton onClick={onFileAdd} className='hover:bg-gray-500'/>
+      <AddButton onClick={onFileAdd} className='hover:bg-gray-500' />
       <UploadButton onClick={onFileUpload} className='hover:bg-gray-500'/>        
       <DeleteButton onClick={onFileDelete} className='hover:bg-gray-500'/>
       <RenameButton onClick={onRenameClick} className='hover:bg-gray-500'/>

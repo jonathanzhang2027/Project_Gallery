@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from .utils import get_user_id_from_request
+from .authentication import get_user_id_from_request
 import logging
 logger = logging.getLogger(__name__)
 

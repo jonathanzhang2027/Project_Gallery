@@ -13,9 +13,9 @@ import { useFileOperations } from '../utils/api';
 import {mapProject, mapFile} from "../utils/mappers";
 
 const generatePreview = (files: File[], activeFileID: File["id"]): string => {
-  const htmlFile = files.find(file => file.id === activeFileID);
-  const cssFiles = files.filter(file => file.file_name.endsWith('.css'));
-  const jsFiles = files.filter(file => file.file_name.endsWith('.js'));
+  const htmlFile = files.find((file) => file.id === activeFileID);
+  const cssFiles = files.filter((file) => file.file_name.endsWith(".css"));
+  const jsFiles = files.filter((file) => file.file_name.endsWith(".js"));
 
   const htmlContent = htmlFile ? htmlFile.content : '';
   const cssContent = cssFiles.map(file => file.content).join('\n');
@@ -58,19 +58,20 @@ const ProjectEditor: React.FC = () => {
   const project = data ? mapProject(data) : null;
   // Use useMemo to create a stable array of file IDs
   const fileIds = useMemo(() => {
-    return project?.files?.map(file => file.id) || [];
+    return project?.files?.map((file) => file.id) || [];
   }, [project]);
   //Get actual file contents
   //used in editor
-  const fileDetailResults = useMultipleFileDetails(fileIds)
-  
-  const fetchedFileContents = 
-  useMemo(() => {
-    return fileDetailResults.map(result => {
-      if (result.isLoading) return 'Loading...';
-      if (result.error) return 'Error loading file';
-      return mapFile(result.data);
-    }).filter(file => typeof file !== 'string');
+  const fileDetailResults = useMultipleFileDetails(fileIds);
+
+  const fetchedFileContents = useMemo(() => {
+    return fileDetailResults
+      .map((result) => {
+        if (result.isLoading) return "Loading...";
+        if (result.error) return "Error loading file";
+        return mapFile(result.data);
+      })
+      .filter((file) => typeof file !== "string");
   }, [fileDetailResults]);
 
   
@@ -95,11 +96,13 @@ const ProjectEditor: React.FC = () => {
     if (localFiles && localFiles.length > 0) {
       return generatePreview(localFiles, activeFileID);
     }
-    return '';
+    return "";
   }, [localFiles, activeFileID]);
 
   const handleNavigate = (filename: string) => {
-    const file = fetchedFileContents.find(file => file.file_name === filename);
+    const file = fetchedFileContents.find(
+      (file) => file.file_name === filename
+    );
     if (file) {
       setActiveFileID(file.id);
     }
@@ -121,7 +124,7 @@ const ProjectEditor: React.FC = () => {
     <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
         {isEditing && //Editor mode
-        <> 
+          <> 
           { !isCollapsedFileTab && <FileTabsNavigation
               projectId={projectId}
               files={project?.files || []}
@@ -129,32 +132,31 @@ const ProjectEditor: React.FC = () => {
               onFileSelect={setActiveFileID}
               onError={setError}/>}
 
-          <CollapseButton
-            onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
-            isCollapsed={isCollapsedFileTab}
-            collapseDirection="left"
-          />
+            <CollapseButton
+              onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
+              isCollapsed={isCollapsedFileTab}
+              collapseDirection="left"
+            />
           
-          <Editor activeFile={localFiles.find(file => file.id === activeFileID)} onSave={onSave}/>
+            <Editor activeFile={localFiles.find(file => file.id === activeFileID)} onSave={onSave}/>
 
-          <CollapseButton
-            onCollapseButtonClick={() => setIsCollapsedPreview(!isCollapsedPreview)}
-            isCollapsed={isCollapsedPreview}
-            collapseDirection="right"
-          />
-        </>}
-        
-        {!isCollapsedPreview &&  
-          <Preview 
-            previewDoc={preview} 
-            onNavigate={handleNavigate}/>}
+            <CollapseButton
+              onCollapseButtonClick={() =>
+                setIsCollapsedPreview(!isCollapsedPreview)
+              }
+              isCollapsed={isCollapsedPreview}
+              collapseDirection="right"
+            />
+          </>
+          }
+
+          {!isCollapsedPreview && (
+            <Preview previewDoc={preview} onNavigate={handleNavigate} />
+          )}
+        </div>
       </div>
-    </div>
-
     </>
   );
 };
-
-
 
 export default ProjectEditor;

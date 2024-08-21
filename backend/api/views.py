@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -9,20 +10,78 @@ from django.http import JsonResponse
 import json
 from firebase_admin import storage
 import requests
-from .utils import get_user_id_from_request
 from django.views.decorators.csrf import csrf_exempt
+
+from django.http import JsonResponse
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.request import Request
+from .authentication import JWTAuthentication
+
+# Authentication abstraction to reuse
+def authenticate(request):
+    auth = JWTAuthentication()
+    try:
+        user, token = auth.authenticate(Request(request))
+    except AuthenticationFailed as e:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': 'Authentication error'}, status=401)
+    if not user:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+    return user, token #method returns an AUTH USER. 
+
+'''
+-----------AUTH USER FORMAT REFERENCE ------------- 
+---------- note: "sub" is the auth0_user_id -------------
+{
+  "given_name": "First name middle name",
+  "family_name": "Last name",
+  "nickname": "google name",
+  "name": "Full name",
+  "picture": "[link to image]",
+  "updated_at": "2024-08-12T13:36:31.394Z",
+  "email": "[email address]",
+  "email_verified": true,
+  "sub": "google-oauth2|   [ example string of numbers ] "
+}
+'''
+
 from rest_framework.permissions import IsAuthenticated
 from .utils import upload_file_to_gcs, delete_file_from_gcs, get_file_content_from_gcs, update_file_in_gcs
+
 @csrf_exempt
-def create_project(request): # CONNECTED TO FRONTEND CREATE PROJECT PAGE
-    temp_user = User.objects.get(username='temp_user')  # Placeholder for Auth0 user
+def list_user_projects(request):
+    if request.method == 'GET':
+        
+        user, token = authenticate(request)
+
+        if not user:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+
+        # Extract the Auth0 User ID from the decoded token
+        auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
+
+        # Filter projects by the Auth0 User ID
+        user_projects = Project.objects.filter(auth0_user_id=auth0_user_id)
+        user_projects_data = list(user_projects.values('id', 'name', 'description', 'created_at', 'updated_at', 'auth0_user_id'))
+     
+        return JsonResponse({'projects': user_projects_data}, safe=False, status=200)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+
+# CONNECTED TO FRONTEND CREATE PROJECT PAGE
+@csrf_exempt
+def create_project(request):
     if request.method == 'POST':
+        user, token = authenticate(request)
+        
         data = json.loads(request.body)
         form = ProjectForm(data)
 
         if form.is_valid():
             project = form.save(commit=False)
-            project.user = temp_user
+            project.auth0_user_id = user.get('sub')
             project.save()
             return JsonResponse({'status': 'success', 'project_id': project.id}, status=201)
 
@@ -30,9 +89,13 @@ def create_project(request): # CONNECTED TO FRONTEND CREATE PROJECT PAGE
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-
-def upload_file(request, project_id): # NEEDS CONNECTING TO FRONTEND CODE EDITOR
+# NEEDS CONNECTING TO FRONTEND CODE EDITOR
+@csrf_exempt
+def upload_file(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
+
+    authenticate(request)
+
     if request.method == 'POST' and 'file' in request.FILES:
         file = request.FILES['file']
         path = default_storage.save('uploads/' + file.name, ContentFile(file.read()))
@@ -42,50 +105,18 @@ def upload_file(request, project_id): # NEEDS CONNECTING TO FRONTEND CODE EDITOR
             file_name=file.name,
             file_url=file_url
         )
-        return render(request, 'api/upload.html', {'project': project, 'file_url': file_url})
-    return render(request, 'api/upload.html', {'project': project})
-
-
-
-# # listing user projects api endpoint
-# def list_user_projects(request):
-#     if request.method == 'GET':
-#         auth0_user_id = get_user_id_from_request(request)
-
-#         if not auth0_user_id:
-#             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
-
-#         # Retrieve all projects
-#         projects = Project.objects.filter(auth0_user_id=auth0_user_id)
-#         projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at'))
-        
-#         return JsonResponse({'projects': projects_data}, safe=False, status=200)
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-def list_user_projects(request):
-    if request.method == 'GET':
-        # Retrieve all projects
-        projects = Project.objects.all()
-        projects_data = list(projects.values('id', 'name', 'description', 'created_at', 'updated_at'))
-        
-        return JsonResponse({'projects': projects_data}, safe=False, status=200)
+        return JsonResponse({'status': 'success', 'file_url': file_url}, status=201)
+    
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-
-
-# for testing backend view only
-def display_user_projects_home(request):
-    # Placeholder for Auth0 user check
-    temp_user = User.objects.get(username='temp_user') # replace with actual Auth0 check
-    projects = Project.objects.filter(user=temp_user)
-    return render(request, 'api/home.html', {'projects': projects})
 
 
 def get_project_details(request, project_id): # CONNECTED TO FRONTEND CODE EDITOR
     project = get_object_or_404(Project, id=project_id)
-    
+
+    user, token = authenticate(request)
+    if user.get('sub')!= project.auth0_user_id: 
+        return JsonResponse({'status': 'error', 'message': 'This isn\'t your project'}, status=405)
+
     # Placeholder for Auth0 user check
     # temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
     # if project.auth0_user_id != temp_user:
@@ -114,7 +145,8 @@ def get_project_details(request, project_id): # CONNECTED TO FRONTEND CODE EDITO
         'id': project.id,
         'project_name': project.name,
         'project_description': project.description,
-        'files': files_data
+        'files': files_data,
+        'auth0_user_id' : project.auth0_user_id
     }
 
     return JsonResponse(project_data)
@@ -124,10 +156,7 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
     project = get_object_or_404(Project, id=project_id)
     file = get_object_or_404(File, id=file_id, project=project)
     
-    # Placeholder for Auth0 user check
-    temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
-    if project.user != temp_user:
-        return JsonResponse({'error': 'Unauthorized action'}, status=403)
+    authenticate(request)
     
     # Delete the file from Google Cloud Storage
     bucket = storage.bucket()
@@ -139,6 +168,13 @@ def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDIT
     file.delete()
     
     return JsonResponse({'success': True})
+
+# for testing DJANGO backend view only
+def display_user_projects_home(request):
+    # # Placeholder for Auth0 user check
+    # authenticate
+    projects = Project.objects
+    return render(request, 'api/home.html', {'projects': projects})
 
 
 '''
@@ -284,7 +320,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     #TODO Add auth-0 authentication
     # permission_classes = [IsProjectOwnerOrReadOnly]
+    def list(self, request, *args, **kwargs):
+        logger.info("list called")
+        user, token = authenticate(request)
+        if not user:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+        
+        auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
 
+        # Filter projects by the Auth0 User ID
+        queryset = Project.objects.filter(auth0_user_id=auth0_user_id)
+
+        # Use the serializer to convert the queryset to JSON
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)

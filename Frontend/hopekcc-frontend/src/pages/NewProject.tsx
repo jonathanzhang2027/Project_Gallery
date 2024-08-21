@@ -1,9 +1,9 @@
-import React, { useState} from 'react';
-import { useNavigate } from 'react-router-dom';
-import {Button} from '../components/projectComponents/Buttons';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/projectComponents/Buttons";
 import { useAuth0 } from "@auth0/auth0-react";
-import axios from 'axios';
-import { useMutation, useQueryClient } from 'react-query';
+import axios from "axios";
+import { useMutation, useQueryClient } from "react-query";
 
 interface InputFieldProps {
   id: string;
@@ -13,7 +13,13 @@ interface InputFieldProps {
   required?: boolean;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ id, label, value, onChange, required = false }) => (
+const InputField: React.FC<InputFieldProps> = ({
+  id,
+  label,
+  value,
+  onChange,
+  required = false,
+}) => (
   <div className="mb-4">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">
       {label}
@@ -33,7 +39,13 @@ interface TextAreaFieldProps extends InputFieldProps {
   rows?: number;
 }
 
-const TextAreaField: React.FC<TextAreaFieldProps> = ({ id, label, value, onChange, rows = 3 }) => (
+const TextAreaField: React.FC<TextAreaFieldProps> = ({
+  id,
+  label,
+  value,
+  onChange,
+  rows = 3,
+}) => (
   <div className="mb-4">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">
       {label}
@@ -48,24 +60,27 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({ id, label, value, onChang
   </div>
 );
 
-
 const NewProject: React.FC = () => {
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
   const navigate = useNavigate();
   const { getAccessTokenSilently, user } = useAuth0();
   const queryClient = useQueryClient();
 
-  const createProject = async (projectData: { name: string; description: string; auth0_user_id: string }) => {
+  const createProject = async (projectData: {
+    name: string;
+    description: string;
+    auth0_user_id: string;
+  }) => {
     const token = await getAccessTokenSilently();
     const response = await axios.post(
-      'http://127.0.0.1:8000/api/projects/',
+      "http://127.0.0.1:8000/api/projects/",
       projectData,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
@@ -74,27 +89,27 @@ const NewProject: React.FC = () => {
   const mutation = useMutation(createProject, {
     onSuccess: () => {
       // Invalidate and refetch
-      queryClient.invalidateQueries('projects');
-      navigate('/');
+      queryClient.invalidateQueries("projects");
+      navigate("/");
     },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (user && user.sub) {
-      mutation.mutate({ 
-        name: projectName, 
+      mutation.mutate({
+        name: projectName,
         description: projectDescription,
-        auth0_user_id: user.sub  // Include the Auth0 user ID
+        auth0_user_id: user.sub, // Include the Auth0 user ID
       });
     } else {
-      console.error('User ID not available');
+      console.error("User ID not available");
       // You might want to show an error message to the user here
     }
   };
 
   const handleCancel = () => {
-    navigate('/');
+    navigate("/"); // Navigate to the home page
   };
 
   return (
@@ -128,11 +143,13 @@ const NewProject: React.FC = () => {
               className="px-4 py-2 bg-gray-400 text-gray-800 rounded hover:bg-gray-500"
               disabled={mutation.isLoading}
             >
-              {mutation.isLoading ? 'Creating...' : 'Create Project'}
+              {mutation.isLoading ? "Creating..." : "Create Project"}
             </Button>
           </div>
         </form>
-        {mutation.isError && <div>An error occurred: {mutation.error as string}</div>}
+        {mutation.isError && (
+          <div>An error occurred: {mutation.error as string}</div>
+        )}
       </div>
     </div>
   );

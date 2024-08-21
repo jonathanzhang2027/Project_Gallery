@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useQuery } from "react-query";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Clock, Calendar } from 'lucide-react';
 import { useProjectList } from "../utils/api.ts";
@@ -54,58 +56,73 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
   
   
   return (
-      <div className="bg-white container mx-auto px-4 py-4">
-        <div className="divide-y divide-gray-200">
-          {/* Header row */}
-          <ProjectHeader />
+    <div className="bg-white container mx-auto px-4 py-4">
+      <div className="divide-y divide-gray-200">
+        {/* Header row */}
+        <ProjectHeader />
 
-          {projects.length === 0 ? (
-            <p className="text-gray-500 italic py-3">No projects available</p>
-          ) : (
-            projects.map((project: Project) => (
-              <ProjectItem key={project.id} project = {project} />
-            ))
-          )}
-        </div>
+        {projects.length === 0 ? (
+          <p className="text-gray-500 italic py-3">No projects available</p>
+        ) : (
+          projects.map((project: Project) => <ProjectItem project={project} />)
+        )}
       </div>
-    );
-}
+    </div>
+  );
+};
 
 const Home = () => {
   const {
     isAuthenticated,
     isLoading: authLoading,
+    getAccessTokenSilently,
   } = useAuth0();
-  const {data, status:loadingStatus, isError, error} = useProjectList()
   // Fetch projects using axios and Auth0 token
-  const projects = data ? mapProjects(data) : [];
-  // console.log('project list is', projects)
-    
+  const fetchProjects = async (): Promise<Project[]> => {
+    // Get the Auth0 token
+    const token = await getAccessTokenSilently();
+    console.log("Generated token: ", token);
+    const response = await axios.get("http://127.0.0.1:8000/api/projects/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response);
+    return response.data.projects;
+  };
+
+  const { data, isLoading, isError, error } = useQuery<Project[]>(
+    "projects",
+    fetchProjects
+  );
   if (authLoading) {
     return <div>Loading authentication...</div>;
   }
-
   if (!isAuthenticated) {
     return <div>Please log in to view your projects.</div>;
   }
-
-  if (loadingStatus === 'loading') {
+  if (isLoading) {
     return <div>Loading projects...</div>;
   }
-
   if (isError) {
-    return <div>Error loading projects: {error instanceof Error ? error.message : "Unknown error"}</div>;
+    return (
+      <div>
+        Error loading projects:{" "}
+        {error instanceof Error ? error.message : "Unknown error"}
+      </div>
+    );
   }
 
-  
+  // Ensure `data` is defined before accessing it
+  const projects = data || [];
   return (
     <div className="bg-gray-100  mx-auto px-4 py-8">
-      <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">Projects</h2>
+      <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">
+        Projects
+      </h2>
       <ProjectList projects={projects} />
     </div>
   );
 };
 
 export default Home;
-
-

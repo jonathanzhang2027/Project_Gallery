@@ -1,21 +1,47 @@
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import AuthenticationFailed
+import requests
+import jwt
+from jwt import InvalidTokenError
+from jwcrypto import jwk
+import os
 
-def get_user_id_from_request(request):
-    """
-    Extract and validate the JWT token from the request to get the user ID.
-    """
-    auth_header = request.headers.get('Authorization')
-    if auth_header and auth_header.startswith('Bearer '):
-        token = auth_header.split(' ')[1]
-        jwt_auth = JWTAuthentication()
-        try:
-            validated_token = jwt_auth.get_validated_token(token)
-            user_id = jwt_auth.get_user(validated_token).id
-            return user_id
-        except AuthenticationFailed:
-            return None
-    return None
+# Load environment variables
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+API_IDENTIFIER = os.getenv('AUTH0_AUDIENCE')
+ALGORITHMS = ['RS256']
+
+def get_jwks():
+    """Fetch the JSON Web Key Set (JWKS) from Auth0."""
+    response = requests.get(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    response.raise_for_status()
+    return response.json()
+
+def get_public_key(jwk_set, kid):
+    """Extract the public key from the JWKS using the key ID (kid)."""
+    for key in jwk_set['keys']:
+        if key['kid'] == kid:
+            # Use PyJWT to convert JWK to PEM format
+            return jwt.algorithms.RSAAlgorithm.from_jwk(key)
+    raise Exception('Public key not found.')
+
+def decode_jwt(token):
+    """Decode the JWT using the public key from Auth0."""
+    jwks = get_jwks()
+    headers = jwt.get_unverified_header(token)
+    kid = headers['kid']
+    public_key = get_public_key(jwks, kid)
+    
+    try:
+        payload = jwt.decode(token, public_key, algorithms=ALGORITHMS, audience=API_IDENTIFIER)
+        return payload
+    except jwt.ExpiredSignatureError:
+        print("Token expired")
+        raise
+    except jwt.InvalidTokenError:
+        print("Invalid token")
+        raise
+    except Exception as e:
+        print(f"Error decoding token: {e}")
+        raise
 
 
 from firebase_admin import storage
@@ -131,4 +157,3 @@ def delete_file_from_gcs(file_url):
         pass
     except exceptions.GoogleCloudError as e:
         raise Exception(f"Error deleting file from Google Cloud Storage: {str(e)}")
-

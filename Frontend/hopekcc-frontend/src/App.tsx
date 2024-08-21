@@ -10,12 +10,11 @@ function App() {
   return (
     <>
       <Router>
-        
         <NavBar />
         <Routes>
           <Route path="" element={<Home />} />
           <Route path="/new-project" element={<NewProject />} />
-          <Route path="/project/:id" element={<ProjectDetails />} />
+          <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/edit-project/:id" element={<EditProject />} />
           <Route path="*" element={<div>Page Not Found</div>} />
         </Routes>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface PreviewProps {
   previewDoc: string;
@@ -9,6 +9,8 @@ export const Preview: React.FC<PreviewProps> = ({
   previewDoc,
   onNavigate
 }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'navigate') {
@@ -19,13 +21,18 @@ export const Preview: React.FC<PreviewProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, [onNavigate]);
 
+  useEffect(() => {
+    if (iframeRef.current) {
+      iframeRef.current.srcdoc = previewDoc;
+    }
+  }, [previewDoc]);
+
   return (
-    <div className={`transition-all duration-300 ease-in-out w-full ` }>
+    <div className={`transition-all duration-300 ease-in-out w-full`}>
       <iframe
+        ref={iframeRef}
         className={'w-full h-full'}
         title="Preview"
-        srcDoc={previewDoc}
-        sandbox="allow-scripts allow-same-origin"
       />
     </div>
   );

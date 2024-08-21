@@ -1,18 +1,45 @@
-import React from 'react';
-import { Files } from './templateFiles';
-
+import React, { useState, useEffect} from 'react';
+import { File } from "../../utils/types";
 interface EditorProps {
-  files: Files;
-  activeFile: string;
-  onFileChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  activeFile?: File;
+  onSave: (content: string) => void;
 }
 
-export const Editor: React.FC<EditorProps> = ({ files, activeFile, onFileChange }) => {
+export const Editor: React.FC<EditorProps> =  React.memo(({ activeFile, onSave }) => {
+  
+  const [localContent, setLocalContent] = useState(activeFile?.content || '');
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setLocalContent(e.target.value);
+  };
+
+  useEffect(() => {
+    if (activeFile) {
+      setLocalContent(activeFile.content || '');
+    }
+  }, [activeFile?.id]);
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const saveContent = () => {
+      if (activeFile && localContent !== activeFile.content) {
+        onSave(localContent);
+      }
+    };
+  
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      saveContent();
+    }
+  };
+
   return (
     <textarea
       className="w-full h-full p-2 font-mono text-sm resize-none"
-      value={files[activeFile]?.content || ''}
-      onChange={onFileChange}
+      value={localContent}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
     />
   );
-};
+}, );
+
+
+Editor.displayName = 'Editor';

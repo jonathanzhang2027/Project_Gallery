@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'api',
     'storages',
-    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -140,22 +139,27 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'api.authentication.Auth0JSONWebTokenAuthentication',
-    ),
+    ],
+
 }
+
+
+# Auth0 configuration
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
+AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
+AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
+
+AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE') 
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Adjust as needed for your frontend
 ]
 
-# Auth0 configuration
-AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
-AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
-AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
 # Google Cloud Storage configuration
 GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')

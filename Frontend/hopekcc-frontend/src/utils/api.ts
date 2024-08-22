@@ -288,20 +288,6 @@ export const useFileOperations = (projectId: number) => {
       throw new Error('File not found');
     }
   
-    // Optimistically update the file content
-    queryClient.setQueryData(['fileDetails', fileId], (oldData: any) => ({
-      ...oldData,
-      content: content
-    }));
-  
-    // Optimistically update the project cache to reflect the change in the file's updated_at timestamp
-    queryClient.setQueryData(['project', projectId], (oldProject: any) => ({
-      ...oldProject,
-      files: oldProject.files.map((f: File) => 
-        f.id === fileId ? { ...f, updated_at: new Date().toISOString() } : f
-      )
-    }));
-  
     try {
       const updatedFile = { ...originalFile, content };
       const formData = mapFileToApiRequest(updatedFile);
@@ -309,9 +295,6 @@ export const useFileOperations = (projectId: number) => {
   
       return true; // Indicate successful save
     } catch (error) {
-      // Revert optimistic updates
-      queryClient.setQueryData(['fileDetails', fileId], originalFile);
-      queryClient.invalidateQueries(['project', projectId]);
       
       console.error('Error saving file:', error);
       setError('Failed to save file. Please try again.');

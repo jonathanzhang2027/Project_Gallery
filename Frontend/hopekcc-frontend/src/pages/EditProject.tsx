@@ -1,16 +1,18 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { FileTabsNavigation } from '../components/projectComponents/FileTabsNavigation';
-import { Editor } from '../components/projectComponents/Editor';
-import { Preview } from '../components/projectComponents/Preview';
-import { CollapseButton } from '../components/projectComponents/Buttons';
-import { ProjectNavBar } from '../components/NavBar';
-import { ProjectDescription } from '../components/projectComponents/ProjectDescription';
-import { useParams } from 'react-router-dom';
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { FileTabsNavigation } from "../components/projectComponents/FileTabsNavigation";
+import { Editor } from "../components/projectComponents/Editor";
+import { Preview } from "../components/projectComponents/Preview";
+import { CollapseButton } from "../components/projectComponents/Buttons";
+import { ProjectNavBar } from "../components/NavBar";
+import { ProjectDescription } from "../components/projectComponents/ProjectDescription";
+import { useParams } from "react-router-dom";
+
 
 import { Project, File} from "../utils/types" 
 import { useProjectDetail, useMultipleFileDetails, useProjectOperations} from '../utils/api';
 import { useFileOperations } from '../utils/api';
 import {mapProject, mapFile} from "../utils/mappers";
+
 
 const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   const activeFile = files.find((file) => file.id === activeFileID);
@@ -151,6 +153,7 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
         </html>
       `;
   }
+
 };
 
 const ProjectEditorContainer: React.FC = () => {
@@ -160,16 +163,17 @@ const ProjectEditorContainer: React.FC = () => {
   const { data: projectData, isLoading: isProjectLoading } = useProjectDetail(projectId);
   const project = projectData ? mapProject(projectData) : null;
   const fileIds = useMemo(() => project?.files?.map(file => file.id) || [], [project?.files]);
+
   const fileQueries = useMultipleFileDetails(fileIds);
 
   const [localFiles, setLocalFiles] = useState<File[]>([]);
 
   const updateLocalFiles = useCallback((newFiles: File[]) => {
-    setLocalFiles(prevFiles => {
+    setLocalFiles((prevFiles) => {
       const updatedFiles = [...prevFiles];
       let hasChanges = false;
-      newFiles.forEach(newFile => {
-        const index = updatedFiles.findIndex(file => file.id === newFile.id);
+      newFiles.forEach((newFile) => {
+        const index = updatedFiles.findIndex((file) => file.id === newFile.id);
         if (index !== -1) {
           if (JSON.stringify(updatedFiles[index]) !== JSON.stringify(newFile)) {
             updatedFiles[index] = newFile;
@@ -184,13 +188,17 @@ const ProjectEditorContainer: React.FC = () => {
     });
   }, []);
 
+
   React.useEffect(() => {
     const successfulQueries = fileQueries.filter(query => query.isSuccess && query.data);
+
+  
     if (successfulQueries.length > 0) {
-      const newFiles = successfulQueries.map(query => mapFile(query.data));
+      const newFiles = successfulQueries.map((query) => mapFile(query.data));
       updateLocalFiles(newFiles);
     }
   }, [fileQueries, updateLocalFiles]);
+
 
   if (isProjectLoading || fileQueries.some(query => query.isLoading)) {
     return <div>Loading...</div>;
@@ -204,6 +212,7 @@ const ProjectEditorContainer: React.FC = () => {
     />
   );
 };
+
 
 
 interface ProjectEditorProps {
@@ -220,6 +229,7 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
   const [error, setError] = useState<string | null | Error>(null);
+
   const [saveMsg, setSaveMsg] = useState<string>('ctrl-s to save the file')
   const { handleProjectRename, handleProjectChangeDescription, error: projectError } = useProjectOperations(project?.id || 0);
   const { handleFileSave } = useFileOperations(project?.id || 0);
@@ -231,6 +241,7 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
     setLocalFiles(files);
   },[files]);
 
+
   const preview = useMemo(() => {
     if (localFiles && localFiles.length > 0) {
       return generatePreview(localFiles, activeFileID);
@@ -239,14 +250,13 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
   }, [localFiles, activeFileID]);
 
   const handleNavigate = (filename: string) => {
-    const file = localFiles.find(
-      (file) => file.file_name === filename
-    );
+    const file = localFiles.find((file) => file.file_name === filename);
     if (file) {
       setActiveFileID(file.id);
     }
 
   };
+
   const handlFileselect = (fileId: number) => {
     setActiveFileID(fileId)
     setSaveMsg('')
@@ -307,15 +317,29 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
           
             <Editor activeFile={localFiles.find(file => file.id === activeFileID)} onSave={onSave} onChange={handleChange} message={saveMsg}/>
 
-            <CollapseButton
-              onCollapseButtonClick={() =>
-                setIsCollapsedPreview(!isCollapsedPreview)
-              }
-              isCollapsed={isCollapsedPreview}
-              collapseDirection="right"
-            />
-          </>
-          }
+
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedFileTab(!isCollapsedFileTab)
+                }
+                isCollapsed={isCollapsedFileTab}
+                collapseDirection="left"
+              />
+
+              <Editor
+                activeFile={localFiles.find((file) => file.id === activeFileID)}
+                onSave={onSave}
+              />
+
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedPreview(!isCollapsedPreview)
+                }
+                isCollapsed={isCollapsedPreview}
+                collapseDirection="right"
+              />
+            </>
+          )}
 
           {!isCollapsedPreview && (
             <Preview previewDoc={preview} onNavigate={handleNavigate} />

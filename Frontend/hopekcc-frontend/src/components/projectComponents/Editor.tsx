@@ -1,3 +1,4 @@
+
 import React, { useMemo} from 'react';
 import { File } from "../../utils/types";
 import { SaveButton } from './Buttons';
@@ -12,8 +13,6 @@ interface EditorToolbarProps {
   onFileSave: () => void;
   message:string;
 }
-
-
 
 type FileType = 'text' | 'pdf' | 'binary' | 'none' | 'img';
 
@@ -93,5 +92,4 @@ export const Editor: React.FC<EditorProps> = React.memo(({ activeFile, onSave, o
 
 
 
-
-Editor.displayName = 'Editor';
+Editor.displayName = "Editor";

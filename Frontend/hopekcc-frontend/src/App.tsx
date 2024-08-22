@@ -4,7 +4,7 @@ import NavBar from "./components/NavBar";
 import Home from "./pages/Home";
 import NewProject from "./pages/NewProject";
 import ProjectDetails from "./pages/ProjectDetails";
-import EditProject from "./pages/EditProject";
+import ProjectEditorContainer from "./pages/EditProject";
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
           <Route path="" element={<Home />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/edit-project/:id" element={<EditProject />} />
+          <Route path="/edit-project/:id" element={<ProjectEditorContainer />} />
           <Route path="*" element={<div>Page Not Found</div>} />
         </Routes>
       </Router>

@@ -102,7 +102,7 @@ export const FileTabsNavigation: React.FC<FileTabsNavigationProps> = ({
   );
 };
 
-export const FileToolbar: React.FC<FileToolbarProps> = ({
+const FileToolbar: React.FC<FileToolbarProps> = ({
   onFileAdd,
   onFileDelete,
   onRenameClick,

@@ -1,10 +1,10 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import ProjectHeader from '../components/projectComponents/ProjectHeader';
-import ProjectMetadata from '../components/projectComponents/ProjectMetadata';
-import ProjectFileList from '../components/projectComponents/ProjectFilelist';
-import { useProjectDetail} from '../utils/api';
-import { mapProject } from '../utils/mappers';
+import React from "react";
+import { useParams } from "react-router-dom";
+import ProjectHeader from "../components/projectComponents/ProjectHeader";
+import ProjectMetadata from "../components/projectComponents/ProjectMetadata";
+import ProjectFileList from "../components/projectComponents/ProjectFilelist";
+import { useProjectDetail } from "../utils/api";
+import { mapProject } from "../utils/mappers";
 const ProjectDetail: React.FC = () => {
   /*
   Fetching project Data from the API and displaying it in the ProjectDetail component.
@@ -29,27 +29,20 @@ const ProjectDetail: React.FC = () => {
   if (!project) {
     return <div>No project data found.</div>;
   }
-  
-
 
   return (
     <div className="container bg-gray-100 mx-auto px-4 py-8">
       <div className="bg-white shadow rounded-lg p-6">
-        <ProjectHeader 
-          projectName={project.name}
-          projectId={project.id}
-        />
-        
-        <ProjectMetadata 
+        <ProjectHeader projectName={project.name} projectId={project.id} />
+
+        <ProjectMetadata
           description={project.description}
           createdAt={project.created_at}
           updatedAt={project.updated_at}
           fileCount={project.files.length}
         />
 
-        <ProjectFileList
-          project={project}
-        />
+        <ProjectFileList project={project} />
       </div>
     </div>
   );

@@ -96,7 +96,7 @@ const NewProject: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (user && user.sub) {
       try {
         mutation.mutate({
@@ -104,7 +104,7 @@ const NewProject: React.FC = () => {
           description: projectDescription,
           auth0_user_id: user.sub,
         });
-      }catch(e){
+      } catch (e) {
         setError(e.message);
       }
     } else {
@@ -152,10 +152,7 @@ const NewProject: React.FC = () => {
             </Button>
           </div>
         </form>
-        {mutation.isError && (
-          <div>An error occurred: {error as string}</div>
-        )}
-
+        {mutation.isError && <div>An error occurred: {error as string}</div>}
       </div>
     </div>
   );

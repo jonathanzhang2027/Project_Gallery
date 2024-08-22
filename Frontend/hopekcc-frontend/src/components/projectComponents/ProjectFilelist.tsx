@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useQueryClient } from 'react-query';
-import { File, Project } from '../../utils/types';
-import { DeleteButton, AddButton, UploadButton, RenameButton } from './Buttons';
-import { useFileOperations } from '../../utils/api';
-import { isValidFileName } from '../../utils/utils';
-import { Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "react-query";
+import { File, Project } from "../../utils/types";
+import { DeleteButton, AddButton, UploadButton, RenameButton } from "./Buttons";
+import { useFileOperations } from "../../utils/api";
+import { isValidFileName } from "../../utils/utils";
+import { Check } from "lucide-react";
 
 interface ProjectFileListProps {
   project: Project;
@@ -16,47 +16,51 @@ interface FileListItemProps {
   onDelete: (fileId: number, filename: string) => Promise<void>;
 }
 
-const FileListItem: React.FC<FileListItemProps> = ({ file, onRename, onDelete }) => {
+const FileListItem: React.FC<FileListItemProps> = ({
+  file,
+  onRename,
+  onDelete,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(file.file_name);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith('.html')) return '📄';
-    if (fileName.endsWith('.css')) return '🎨';
-    if (fileName.endsWith('.js')) return '🟨';
-    return '📄';
+    if (fileName.endsWith(".html")) return "📄";
+    if (fileName.endsWith(".css")) return "🎨";
+    if (fileName.endsWith(".js")) return "🟨";
+    return "📄";
   };
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const { isValid, message } = isValidFileName(newName);
-  if (!isValid) {
-    setError(message);
-    setIsEditing(false);
-    return;
-  }
-
-  if (newName !== file.file_name) {
-    // Optimistically update UI
-    setIsEditing(false);
-    setError(null);
-
-    try {
-      // Perform the actual rename operation
-      await onRename(file.id, newName);
-    } catch (error) {
-      // If the rename fails, revert the optimistic update
-      setIsEditing(true);
-      setError("Failed to rename file. Please try again.");
-      // You might also want to revert the file name in the UI if you're displaying it
+    e.preventDefault();
+    const { isValid, message } = isValidFileName(newName);
+    if (!isValid) {
+      setError(message);
+      setIsEditing(false);
+      return;
     }
-  } else {
-    // No change in name, just exit editing mode
-    setIsEditing(false);
-  }
-};
+
+    if (newName !== file.file_name) {
+      // Optimistically update UI
+      setIsEditing(false);
+      setError(null);
+
+      try {
+        // Perform the actual rename operation
+        await onRename(file.id, newName);
+      } catch (error) {
+        // If the rename fails, revert the optimistic update
+        setIsEditing(true);
+        setError("Failed to rename file. Please try again.");
+        // You might also want to revert the file name in the UI if you're displaying it
+      }
+    } else {
+      // No change in name, just exit editing mode
+      setIsEditing(false);
+    }
+  };
 
   const handleInputBlur = () => {
     setIsEditing(false);
@@ -75,7 +79,10 @@ const FileListItem: React.FC<FileListItemProps> = ({ file, onRename, onDelete })
       <div className="flex items-center flex-grow">
         <span className="mr-2">{getFileIcon(file.file_name)}</span>
         {isEditing ? (
-          <form onSubmit={handleRenameSubmit} className="flex items-center flex-grow">
+          <form
+            onSubmit={handleRenameSubmit}
+            className="flex items-center flex-grow"
+          >
             <input
               ref={inputRef}
               type="text"
@@ -98,35 +105,43 @@ const FileListItem: React.FC<FileListItemProps> = ({ file, onRename, onDelete })
       {!isEditing && (
         <div className="space-x-2">
           <RenameButton onClick={() => setIsEditing(true)} className="p-2" />
-          <DeleteButton onClick={() => onDelete(file.id, file.file_name)} className="p-2" />
+          <DeleteButton
+            onClick={() => onDelete(file.id, file.file_name)}
+            className="p-2"
+          />
         </div>
       )}
     </li>
   );
 };
 
-const ProjectFileList: React.FC<ProjectFileListProps> = ({project}) => {
-
-  const { handleDelete, handleRename, handleAdd, handleUpload, error, setError } = useFileOperations(project.id);
+const ProjectFileList: React.FC<ProjectFileListProps> = ({ project }) => {
+  const {
+    handleDelete,
+    handleRename,
+    handleAdd,
+    handleUpload,
+    error,
+    setError,
+  } = useFileOperations(project.id);
 
   const onDelete = async (fileId: number, filename: string) => {
     await handleDelete(fileId, filename);
   };
 
-
   const onRename = async (fileId: number, newName: string) => {
     await handleRename(fileId, newName);
   };
   const onAdd = async () => {
-    const newFileName = prompt('Enter new file name:');
+    const newFileName = prompt("Enter new file name:");
     if (newFileName) {
       await handleAdd(newFileName);
     }
   };
 
   const onUpload = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
+    const input = document.createElement("input");
+    input.type = "file";
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -135,7 +150,7 @@ const ProjectFileList: React.FC<ProjectFileListProps> = ({project}) => {
     };
     input.click();
   };
-  
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

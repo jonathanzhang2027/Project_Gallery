@@ -2,12 +2,12 @@ export interface FileData {
   id: number;
   file_name: string;
   content: string;
-};
+}
 export interface Files {
-    [key: string]: FileData;
-  };
-  
-  /*
+  [key: string]: FileData;
+}
+
+/*
   export const templateFiles: Files = {
     'index.html': `<!DOCTYPE html>
       <html lang="en">

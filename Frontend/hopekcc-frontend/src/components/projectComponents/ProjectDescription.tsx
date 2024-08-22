@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 interface ProjectDescriptionProps {
   description: string;
   onDescriptionChange: (newDescription: string) => Promise<boolean>;
 }
 
-export const ProjectDescription: React.FC<ProjectDescriptionProps> = ({ description, onDescriptionChange }) => {
+export const ProjectDescription: React.FC<ProjectDescriptionProps> = ({
+  description,
+  onDescriptionChange,
+}) => {
   const [editedDescription, setEditedDescription] = useState(description);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +23,10 @@ export const ProjectDescription: React.FC<ProjectDescriptionProps> = ({ descript
     try {
       const success = await onDescriptionChange(editedDescription);
       if (!success) {
-        setError('Failed to save changes. Please try again.');
+        setError("Failed to save changes. Please try again.");
       }
     } catch (err) {
-      setError('An error occurred while saving. Please try again.');
+      setError("An error occurred while saving. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -44,7 +47,7 @@ export const ProjectDescription: React.FC<ProjectDescriptionProps> = ({ descript
           onClick={handleSave}
           disabled={isSaving || editedDescription === description}
         >
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving ? "Saving..." : "Save Changes"}
         </button>
       </div>
       {error && <p className="mt-2 text-red-500">{error}</p>}

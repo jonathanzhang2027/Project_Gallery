@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "react-query";
@@ -9,7 +10,15 @@ import {
   DeleteButton,
 } from "../components/projectComponents/Buttons.tsx";
 import { useProjectOperations } from "../utils/api.ts";
-const ProjectList = ({ projects }: { projects: Project[] }) => {
+import SearchBar from "../components/SearchBar.tsx";
+interface ProjectListProps {
+  projects: Project[];
+  isLoading: boolean;
+}
+const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
+  if (isLoading) {
+    return <div>Loading projects...</div>;
+  }
   const ProjectHeader = () => {
     return (
       <div className="grid grid-cols-12 gap-4 items-center py-3 rounded-md transition-colors duration-150">
@@ -53,7 +62,7 @@ const ProjectList = ({ projects }: { projects: Project[] }) => {
   };
 
   return (
-    <div className="bg-white container mx-auto px-4 py-4">
+    <div className="bg-gray-100 container mx-auto px-4 py-4">
       <div className="divide-y divide-gray-200">
         {/* Header row */}
         <ProjectHeader />
@@ -76,33 +85,41 @@ const Home = () => {
     isLoading: authLoading,
     getAccessTokenSilently,
   } = useAuth0();
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
+  const [searchQuery, setSearchQuery] = useState<string>("");
   // Fetch projects using axios and Auth0 token
   const fetchProjects = async (): Promise<Project[]> => {
     // Get the Auth0 token
     const token = await getAccessTokenSilently();
-    console.log("Generated token: ", token);
+    // console.log("Generated token: ", token);
     const response = await axios.get("http://127.0.0.1:8000/api/projects/", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(response);
+    // console.log(response);
     return response.data;
   };
 
   const { data, isLoading, isError, error } = useQuery<Project[]>(
     "projects",
-    fetchProjects
+    fetchProjects,
+    {
+      onSuccess: (projects) => {
+        setFilteredProjects(projects);
+      },
+    }
   );
+
   if (authLoading) {
     return <div>Loading authentication...</div>;
   }
   if (!isAuthenticated) {
     return <div>Please log in to view your projects.</div>;
   }
-  if (isLoading) {
-    return <div>Loading projects...</div>;
-  }
+  // if (isLoading) {
+  //   return <div>Loading projects...</div>;
+  // }
   if (isError) {
     return (
       <div>
@@ -112,46 +129,71 @@ const Home = () => {
     );
   }
 
-  // Ensure `data` is defined before accessing it
-  const projects = data || [];
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim() === "") {
+      setFilteredProjects(data || []); // Show all projects if the query is empty
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim() === "") {
+      setFilteredProjects(data || []); // Show all projects if the query is empty
+    } else {
+      const filtered = (data || []).filter(
+        (project) =>
+          project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+  };
+
   return (
-    <div className="bg-gray-100  mx-auto px-4 py-8">
-      <div className="bg-gray-100 mx-auto px-4 py-8">
-        {/* Create Project Section */}
+    <div>
+      {/* Search bar Section */}
+      <section className="mx-auto px-4 py-4">
+        <SearchBar
+          onSearch={handleSearch}
+          onSubmit={handleSearchSubmit} // Handle search on Enter key press
+        />
+      </section>
+
+      {/* Create Project Section */}
+      <section className="bg-gray-100  mx-auto px-4 py-8">
         <div className="mb-6">
           <h2 className="text-2xl text-left font-semibold mb-2 text-gray-800">
             Create Project
           </h2>
           <div className="flex justify-center">
             <div className="relative">
-              {/* Light blue rectangle background */}
               <Link
                 to="/new-project"
-                className="relative bg-[#a8e9fd] py-3 px-6 text-center font-bold text-[#1d769f] text-lg block transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
-                style={{ width: "200px", height: "50px" }} // Set a fixed size for the button
+                className="relative w-48 h-12 flex items-center justify-center group"
               >
-                New Project
+                {/* Light blue background */}
+                <div className="absolute inset-0 bg-[#a8e9fd] transition-transform duration-300 ease-in-out transform group-hover:scale-105 group-hover:skew-x-[10deg] group-hover:scale-105 group-hover:shadow-lg z-0"></div>
+
+                {/* Text */}
+                <div className="relative text-lg font-bold text-[#1d769f] transition-transform duration-300 ease-in-out transform group-hover:scale-105 z-10">
+                  New Project
+                </div>
+
                 {/* Rhombus border */}
-                <div
-                  className="absolute text-lg font-bold text-[#1d769f] border-4 border-[#1d769f] transform skew-x-[-10deg] overflow-hidden"
-                  style={{
-                    width: "200px",
-                    height: "50px",
-                    top: "0px",
-                    left: "0px",
-                  }}
-                ></div>
+                <div className="absolute inset-0 border-4 border-[#1d769f] transition-transform duration-300 ease-in-out transform group-hover:skew-x-[-10deg] group-hover:scale-105 z-5"></div>
               </Link>
             </div>
           </div>
         </div>
-      </div>
-
+      </section>
       {/* Projects Section */}
-      <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">
-        Projects
-      </h2>
-      <ProjectList projects={projects} />
+      <section className="mx-auto px-4 py-8">
+        <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">
+          Projects
+        </h2>
+        <ProjectList projects={filteredProjects || []} isLoading={isLoading} />
+        {/* ensure data is defined before accessing it */}
+      </section>
     </div>
   );
 };

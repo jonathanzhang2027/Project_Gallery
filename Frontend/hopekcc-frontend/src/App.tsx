@@ -5,20 +5,28 @@ import Home from "./pages/Home";
 import NewProject from "./pages/NewProject";
 import ProjectDetails from "./pages/ProjectDetails";
 import EditProject from "./pages/EditProject";
+import Footer from "./components/Footer";
 
 function App() {
   return (
     <>
-      <Router>
-        <NavBar />
-        <Routes>
-          <Route path="" element={<Home />} />
-          <Route path="/new-project" element={<NewProject />} />
-          <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/edit-project/:id" element={<EditProject />} />
-          <Route path="*" element={<div>Page Not Found</div>} />
-        </Routes>
-      </Router>
+      <div className="flex flex-col min-h-screen">
+        <Router>
+          <NavBar />
+          <main className="p-8 pt-0 h-1/2" style={{ minHeight: "450px" }}>
+            <Routes>
+              <Route path="" element={<Home />} />
+              <Route path="/new-project" element={<NewProject />} />
+              <Route path="/projects/:id" element={<ProjectDetails />} />
+              <Route path="/edit-project/:id" element={<EditProject />} />
+              <Route path="*" element={<div>Page Not Found</div>} />
+            </Routes>
+          </main>
+          <div className="flex-grow">
+            <Footer />
+          </div>
+        </Router>
+      </div>
     </>
   );
 }

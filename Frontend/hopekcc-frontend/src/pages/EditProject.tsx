@@ -302,7 +302,7 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
       <div className="flex-grow flex">
         {isEditing && //Editor mode
           <> 
-          { !isCollapsedFileTab && <FileTabsNavigation
+            { !isCollapsedFileTab && <FileTabsNavigation
               projectId={project.id}
               files={project?.files || []}
               activeFileID={activeFileID}
@@ -315,31 +315,18 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
               collapseDirection="left"
             />
           
-            <Editor activeFile={localFiles.find(file => file.id === activeFileID)} onSave={onSave} onChange={handleChange} message={saveMsg}/>
+            <Editor activeFile={localFiles.find(file => file.id === activeFileID)} 
+              onSave={onSave} onChange={handleChange} message={saveMsg}/>
 
-
-              <CollapseButton
-                onCollapseButtonClick={() =>
-                  setIsCollapsedFileTab(!isCollapsedFileTab)
-                }
-                isCollapsed={isCollapsedFileTab}
-                collapseDirection="left"
-              />
-
-              <Editor
-                activeFile={localFiles.find((file) => file.id === activeFileID)}
-                onSave={onSave}
-              />
-
-              <CollapseButton
-                onCollapseButtonClick={() =>
-                  setIsCollapsedPreview(!isCollapsedPreview)
-                }
-                isCollapsed={isCollapsedPreview}
-                collapseDirection="right"
-              />
-            </>
-          )}
+            <CollapseButton
+              onCollapseButtonClick={() =>
+                setIsCollapsedPreview(!isCollapsedPreview)
+              }
+              isCollapsed={isCollapsedPreview}
+              collapseDirection="right"
+            />
+          </>
+        }
 
           {!isCollapsedPreview && (
             <Preview previewDoc={preview} onNavigate={handleNavigate} />

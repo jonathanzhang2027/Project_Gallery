@@ -18,8 +18,8 @@ function App() {
             <Routes>
               <Route path="" element={<Home />} />
               <Route path="/new-project" element={<NewProject />} />
-              <Route path="/projects/:id" element={<ProjectEditorContainer />} />
-              <Route path="/edit-project/:id" element={<EditProject />} />
+              <Route path="/projects/:id" element={<ProjectDetails />} />
+              <Route path="/edit-project/:id" element={<ProjectEditorContainer />} />
               <Route path="*" element={<div>Page Not Found</div>} />
             </Routes>
           </main>

@@ -56,39 +56,46 @@ const ProjectEditor: React.FC = () => {
   const projectId = Number(id);
   const { data } = useProjectDetail(projectId);
   const project = data ? mapProject(data) : null;
-  // Use useMemo to create a stable array of file IDs
-  const fileIds = useMemo(() => {
-    return project?.files?.map((file) => file.id) || [];
-  }, [project]);
-  
-  const fileDetailResults = useMultipleFileDetails(fileIds);
+  const fileIds = useMemo(() => project?.files?.map(file => file.id) || [], [project?.files]);
+  const fileQueries = useMultipleFileDetails(fileIds);
+  const [localFiles, setLocalFiles] = useState<File[]>([]);
+  const updateLocalFiles = useCallback((newFiles: File[]) => {
+    setLocalFiles(prevFiles => {
+      const updatedFiles = [...prevFiles];
+      let hasChanges = false;
+      newFiles.forEach(newFile => {
+        const index = updatedFiles.findIndex(file => file.id === newFile.id);
+        if (index !== -1) {
+          if (JSON.stringify(updatedFiles[index]) !== JSON.stringify(newFile)) {
+            updatedFiles[index] = newFile;
+            hasChanges = true;
+          }
+        } else {
+          updatedFiles.push(newFile);
+          hasChanges = true;
+        }
+      });
+      return hasChanges ? updatedFiles : prevFiles;
+    });
+  }, []);
 
-  const fetchedFileContents = useMemo(() => {
-    return fileDetailResults
-      .map((result) => {
-        if (result.isLoading) return "Loading...";
-        if (result.error) return "Error loading file";
-        return mapFile(result.data);
-      })
-      .filter((file) => typeof file !== "string");
-  }, [fileDetailResults]);
+  useEffect(() => {
+    const successfulQueries = fileQueries.filter(query => query.isSuccess && query.data);
+    if (successfulQueries.length > 0) {
+      const newFiles = successfulQueries.map(query => mapFile(query.data));
+      updateLocalFiles(newFiles);
+    }
+  }, [fileQueries, updateLocalFiles]);
 
-  
   //data for display
   const [activeFileID, setActiveFileID] = useState(fileIds[0] || 0);
-  // const [localFiles, setLocalFiles] = useState<File[]>([]);
-  // useEffect(() => {
-  //   setLocalFiles(fetchedFileContents);
-  // }, [fetchedFileContents]);
-  let localFiles = useMemo(() => {
-    return fetchedFileContents;
-  }, [fetchedFileContents]);
+  
 
   const [isEditing, setIsEditing] = useState<boolean>(true);
   const [isCollapsedFileTab, setIsCollapsedFileTab] = useState<boolean>(false);
   const [isCollapsedPreview, setIsCollapsedPreview] = useState<boolean>(false);
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null | Error>(null);
   const {handleProjectRename, handleProjectChangeDescription, error:projectError} = useProjectOperations(projectId)
   const { handleFileSave } = useFileOperations(projectId);
   const preview = useMemo(() => {
@@ -99,7 +106,7 @@ const ProjectEditor: React.FC = () => {
   }, [localFiles, activeFileID]);
 
   const handleNavigate = (filename: string) => {
-    const file = fetchedFileContents.find(
+    const file = localFiles.find(
       (file) => file.file_name === filename
     );
     if (file) {

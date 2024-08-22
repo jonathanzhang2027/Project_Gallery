@@ -31,7 +31,7 @@ const ProjectDetail: React.FC = () => {
   }
 
   return (
-    <div className="container bg-gray-100 mx-auto px-4 py-8">
+    <div className="container bg-gray-100 mx-auto px-4 py-8 mt-8">
       <div className="bg-white shadow rounded-lg p-6">
         <ProjectHeader projectName={project.name} projectId={project.id} />
 

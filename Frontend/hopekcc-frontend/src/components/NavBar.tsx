@@ -10,7 +10,7 @@ import UserInfo from "./UserInfo";
 
 const navClass =
   "flex justify-between items-center bg-gray-500 text-white p-4 ";
-const ulClass = "flex space-x-4";
+const ulClass = "flex space-x-4 items-center";
 const liClass = "mx-2 px-2";
 const linkClass = "text-white";
 const activeLinkClass = "underline";
@@ -113,13 +113,13 @@ export const ProjectNavBar = ({
     >
       <ul className={ulClass}>
         <li className={liClass}>
-          <Link to={`/projects/${id}`} className="flex">
+          <Link to={`/projects/${id}`} className="flex items-center">
             <ArrowLeft size={20} className="mx-2" />
             <span>Back</span>
           </Link>
         </li>
         <li className={liClass}>
-          <Link to={`/`} className="flex">
+          <Link to={`/`} className="flex items-center">
             <House size={20} className="mx-2" />
             <span>Home</span>
           </Link>
@@ -138,7 +138,7 @@ export const ProjectNavBar = ({
       </ul>
       <ul className={ulClass}>
         <li className={liClass}>
-          <button className="flex" onClick={onSwitchView}>
+          <button className="flex items-center" onClick={onSwitchView}>
             {isEditing ? ( //Display view or Edit
               <>
                 <Eye size={20} className="mx-2" />

@@ -13,7 +13,7 @@ function App() {
       <div className="flex flex-col min-h-screen">
         <Router>
           <NavBar />
-          <main className="p-8 pt-0 h-1/2" style={{ minHeight: "450px" }}>
+          <main className="px-8" style={{ minHeight: "450px" }}>
             <Routes>
               <Route path="" element={<Home />} />
               <Route path="/new-project" element={<NewProject />} />

@@ -17,7 +17,7 @@ interface EditorToolbarProps {
 type FileType = 'text' | 'pdf' | 'binary' | 'none' | 'img';
 
 const getFileType = (content: string): FileType => {
-  if (!content) return 'none';
+  if (!content) return 'text';
   if (content.startsWith('%PDF') || content.startsWith('JVBERi')) return 'pdf';
   const nonPrintableChars = content.match(/[\x00-\x08\x0E-\x1F\x7F-\xFF]/g);
   if (nonPrintableChars !== null && nonPrintableChars.length > content.length * 0.1) return 'binary';
@@ -58,7 +58,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 };
 
 export const Editor: React.FC<EditorProps> = React.memo(({ activeFile, onSave, onChange, message }) => {
-  const content = activeFile?.content || '';
+  const content = activeFile?.content || ' ';
   const fileType = useMemo(() => getFileType(activeFile?.content || ''), [activeFile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

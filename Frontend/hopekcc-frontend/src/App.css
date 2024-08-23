@@ -1,5 +1,6 @@
 body,
 html {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   height: 100%;
@@ -8,6 +9,7 @@ html {
 #root {
   margin: 0 auto;
   text-align: center;
+  height: 100%;
 }
 
 .logo {

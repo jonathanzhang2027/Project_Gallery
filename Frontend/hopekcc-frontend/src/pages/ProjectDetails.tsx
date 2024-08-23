@@ -19,15 +19,19 @@ const ProjectDetail: React.FC = () => {
   const project = data ? mapProject(data) : null;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    <div className="my-56">
+      <div className="text-center">Loading...</div>
+    </div>;
   }
-
   if (error) {
     return <div>Error: {error.message}</div>;
   }
-
   if (!project) {
-    return <div>No project data found.</div>;
+    return (
+      <div className="my-56">
+        <div className="text-center">No project data found!</div>
+      </div>
+    );
   }
 
   return (

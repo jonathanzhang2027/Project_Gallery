@@ -18,10 +18,11 @@ const InfoItem = ({
     <span className="text-gray-700 text-sm">{children}</span>
   </li>
 );
+``;
 
 const UserInfo = ({ user }: { user: User }) => {
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden absolute right-0 top-full mt-2 w-64">
+    <div className="relative bg-white mt-3 sm:m-auto z-20">
       <div className="flex items-center p-4 bg-gray-100">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex-shrink-0">
           <img
@@ -30,7 +31,7 @@ const UserInfo = ({ user }: { user: User }) => {
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="ml-3">
+        <div className="ml-4 ">
           <h2 className="text-lg font-bold text-gray-800">{user.name}</h2>
           <p className="text-sm text-gray-600">{user.nickname}</p>
         </div>

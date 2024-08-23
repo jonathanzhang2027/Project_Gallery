@@ -1,37 +1,72 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { User } from "@auth0/auth0-spa-js";
-import { House, ArrowLeft, Edit, FileText, Eye } from "lucide-react";
-
+import {
+  House,
+  ArrowLeft,
+  Edit,
+  FileText,
+  Eye,
+  SquareMenu,
+  X,
+} from "lucide-react";
 import LoginButton from "./LoginButton";
 import { TitleDisplayButton } from "./projectComponents/Buttons";
 import UserInfo from "./UserInfo";
+import NavBarMenu from "./NavMobileMenu";
 
 const navClass =
-  "flex justify-between items-center bg-gray-500 text-white p-4 ";
+  "flex justify-between items-center bg-[#1d769f] text-white p-4 text-lg";
 const ulClass = "flex space-x-4 items-center";
 const liClass = "mx-2 px-2";
-const linkClass = "text-white";
+const linkClass = "hover:bg-[#e5e5e5] hover:text-[#1d769f]";
 const activeLinkClass = "underline";
+
 const HoverableUserInfo = ({ user }: { user: User }) => {
-  const [showUserInfo, setShowUserInfo] = useState(false); // Declare the setShowUserInfo function
+  const [showUserInfo, setShowUserInfo] = useState(false);
+  const userInfoRef = useRef<HTMLDivElement>(null);
+
+  const toggleUserInfo = () => {
+    setShowUserInfo(!showUserInfo);
+  };
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      userInfoRef.current &&
+      !userInfoRef.current.contains(event.target as Node)
+    ) {
+      setShowUserInfo(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showUserInfo) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserInfo]);
 
   return (
-    <div
-      onMouseEnter={() => setShowUserInfo(true)}
-      onMouseLeave={() => setShowUserInfo(false)}
-      className="relative"
-    >
+    <div className="relative" ref={userInfoRef}>
       <img
         src={user.picture}
         alt={user.name}
-        className="w-8 h-8 rounded-full"
+        className="w-8 h-8 rounded-full cursor-pointer"
+        onClick={toggleUserInfo}
       />
       {showUserInfo && (
         <>
           <div className="absolute top-full right-0 w-64 h-4" />
-          <UserInfo user={user} />
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden absolute right-0 top-full mt-2 w-64">
+            <UserInfo user={user} />
+          </div>
         </>
       )}
     </div>
@@ -41,29 +76,38 @@ const HoverableUserInfo = ({ user }: { user: User }) => {
 export const NavBar = () => {
   const { isAuthenticated, user } = useAuth0();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+
   const getLinkClass = (path: string) =>
-    `${linkClass} ${location.pathname === path ? activeLinkClass : ""}`;
+    `${
+      location.pathname === path ? activeLinkClass : linkClass
+    } rounded-md px-3 py-2 text-lg font-medium`;
+
   // don't display if editing
   if (location.pathname.includes("edit-project")) return null;
+
   return (
-    <nav className={navClass} style={{ backgroundColor: "#1d769f" }}>
+    <nav className="justify-between items-center bg-[#1d769f] text-white p-4 text-lg sm:flex-col">
       <div className="flex justify-between items-center w-full">
         {/* Left Side - Logo */}
         <ul className={`${ulClass} items-center`}>
           <li className={liClass}>
-            <img
-              width="281"
-              height="49"
-              src="https://www.hopekcc.org/wp-content/uploads/2024/03/New_Logo-02-White.png"
-              alt="HopeKCC"
-              decoding="async"
-              sizes="(max-width: 281px) 100vw, 281px"
-            />
+            <Link to="/" className={getLinkClass("/")}>
+              <img
+                width="281"
+                height="49"
+                src="https://www.hopekcc.org/wp-content/uploads/2024/03/New_Logo-02-White.png"
+                alt="HopeKCC"
+                decoding="async"
+                sizes="(max-width: 281px) 100vw, 281px"
+              />
+            </Link>
           </li>
         </ul>
 
         {/* Right Side - Links and User Info */}
-        <ul className={`${ulClass} items-center space-x-4`}>
+        <ul className={`${ulClass} items-center space-x-4 hidden sm:flex`}>
           <li className={liClass}>
             <Link to="/" className={getLinkClass("/")}>
               Home
@@ -82,7 +126,29 @@ export const NavBar = () => {
             )}
           </li>
         </ul>
+        {/* Mobile Menu Button */}
+        <button
+          type="button"
+          className="sm:hidden p-2 text-gray-400 hover:text-white focus:outline-none"
+          aria-controls="mobile-menu"
+          aria-expanded={isMobileMenuOpen ? "true" : "false"}
+          onClick={toggleMobileMenu}
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-6 w-6" aria-hidden="true" />
+          ) : (
+            <SquareMenu className="h-6 w-6" aria-hidden="true" />
+          )}
+        </button>
       </div>
+
+      {isMobileMenuOpen && (
+        <NavBarMenu
+          isAuthenticated={isAuthenticated}
+          getLinkClass={getLinkClass}
+          user={user}
+        />
+      )}
     </nav>
   );
 };
@@ -105,12 +171,7 @@ export const ProjectNavBar = ({
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth0();
   return (
-    <nav
-      className={
-        "flex justify-between items-center bg-gray-500 text-white p-4 "
-      }
-      style={{ backgroundColor: "#1d769f" }}
-    >
+    <nav className={navClass}>
       <ul className={ulClass}>
         <li className={liClass}>
           <Link to={`/projects/${id}`} className="flex items-center">

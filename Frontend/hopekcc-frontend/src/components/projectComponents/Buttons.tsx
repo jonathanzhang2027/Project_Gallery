@@ -7,7 +7,7 @@ import {
   Trash,
   File as Fileimg,
   Eye,
-  Save
+  Save,
 } from "lucide-react"; //icons
 import { File } from "../../utils/types";
 // Base ButtonProps interface
@@ -219,7 +219,11 @@ export const SaveButton: React.FC<ButtonProps> = ({
   onClick,
   className = "",
 }) => (
-  <Button onClick={onClick} className={`${className}`} title="save file (Ctrl -s)">
+  <Button
+    onClick={onClick}
+    className={`${className}`}
+    title="save file (Ctrl -s)"
+  >
     <Save />
   </Button>
 );

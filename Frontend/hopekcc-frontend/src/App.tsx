@@ -6,20 +6,21 @@ import NewProject from "./pages/NewProject";
 import ProjectDetails from "./pages/ProjectDetails";
 import ProjectEditorContainer from "./pages/EditProject";
 import Footer from "./components/Footer";
-
 function App() {
   return (
     <>
-
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-[#1d769f] ">
         <Router>
           <NavBar />
-          <main className="px-8" style={{ minHeight: "450px" }}>
+          <main className="px-8 bg-white h-2/3" style={{ minHeight: "450px" }}>
             <Routes>
               <Route path="" element={<Home />} />
               <Route path="/new-project" element={<NewProject />} />
               <Route path="/projects/:id" element={<ProjectDetails />} />
-              <Route path="/edit-project/:id" element={<ProjectEditorContainer />} />
+              <Route
+                path="/edit-project/:id"
+                element={<ProjectEditorContainer />}
+              />
               <Route path="*" element={<div>Page Not Found</div>} />
             </Routes>
           </main>

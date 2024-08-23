@@ -163,7 +163,7 @@ const ProjectEditorContainer: React.FC = () => {
   const { data: projectData, isLoading: isProjectLoading } = useProjectDetail(projectId);
   const project = projectData ? mapProject(projectData) : null;
   const fileIds = useMemo(() => project?.files?.map(file => file.id) || [], [project?.files]);
-
+  
   const fileQueries = useMultipleFileDetails(fileIds);
 
   const [localFiles, setLocalFiles] = useState<File[]>([]);

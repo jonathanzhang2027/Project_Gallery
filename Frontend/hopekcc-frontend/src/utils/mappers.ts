@@ -8,13 +8,14 @@ import type { File, Project } from "./types";
  * @returns The mapped File object.
  */
 function mapApiResponseToFile(data: any): File {
+  
   let decodedContent = data?.content?.content || "";
   
   if (data?.content?.is_base64) {
+    const noExtension = data.file_name.split('.').length === 1;
     const fileExtension = data.file_name.split('.').pop()?.toLowerCase();
     const textExtensions = ['txt', 'html', 'css', 'js', 'json', 'md', 'xml', 'csv'];
-    
-    if (textExtensions.includes(fileExtension)) {
+    if (textExtensions.includes(fileExtension) || noExtension ) {
       // For text files, decode from base64 to UTF-8
       decodedContent = new TextDecoder().decode(Uint8Array.from(atob(decodedContent), c => c.charCodeAt(0)));
     } else {

@@ -157,11 +157,10 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
 };
 
 const ProjectEditorContainer: React.FC = () => {
-  //lifting up Fetching logic to escape from constant rendering
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
-  const { data: projectData, isLoading: isProjectLoading } = useProjectDetail(projectId);
-  const project = projectData ? mapProject(projectData) : null;
+  const { data: projectData } = useProjectDetail(projectId);
+  const project = useMemo(() => projectData ? mapProject(projectData) : null, [projectData]);
   const fileIds = useMemo(() => project?.files?.map(file => file.id) || [], [project?.files]);
   
   const fileQueries = useMultipleFileDetails(fileIds);
@@ -188,10 +187,8 @@ const ProjectEditorContainer: React.FC = () => {
     });
   }, []);
 
-
-  React.useEffect(() => {
+  useEffect(() => {
     const successfulQueries = fileQueries.filter(query => query.isSuccess && query.data);
-
   
     if (successfulQueries.length > 0) {
       const newFiles = successfulQueries.map((query) => mapFile(query.data));
@@ -200,18 +197,21 @@ const ProjectEditorContainer: React.FC = () => {
   }, [fileQueries, updateLocalFiles]);
 
 
-  if (isProjectLoading || fileQueries.some(query => query.isLoading)) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <ProjectEditor
+    <MemoizedProjectEditor
       project={project}
       files={localFiles}
       updateLocalFiles={updateLocalFiles}
+
     />
   );
 };
+
+interface ProjectEditorProps {
+  project: Project | null;
+  files: File[];
+  updateLocalFiles: (newFiles: File[]) => void;
+}
 
 
 
@@ -235,17 +235,8 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
   if (projectError) {
     setError(projectError);
   }
+  
   const { handleFileSave } = useFileOperations(project?.id || 0);
-  if (!project){
-    return (
-      <>
-    <div>missing projects</div>
-    {error && typeof error !== 'string' && <div>{error.message}</div>}
-    {error && typeof error === 'string' && <div>{error}</div>}
-    </>
-    )
-    
-  }
   useEffect(() => {
     
     setLocalFiles(files);
@@ -310,10 +301,15 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
     
     <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-grow flex">
+        {error && (
+          <div className="w-full h-full p-4 flex items-center justify-center bg-gray-100">
+            <p className="text-lg text-red-700">{typeof error === 'string' ? error : error.message}</p>
+          </div>
+        )}
         {isEditing && //Editor mode
           <> 
             { !isCollapsedFileTab && <FileTabsNavigation
-              projectId={project.id}
+              projectId={project?.id || 0}
               files={project?.files || []}
               activeFileID={activeFileID}
               onFileSelect={handlFileselect}
@@ -346,5 +342,5 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
     </>
   );
 };
-
+const MemoizedProjectEditor = React.memo(ProjectEditor);
 export default ProjectEditorContainer;

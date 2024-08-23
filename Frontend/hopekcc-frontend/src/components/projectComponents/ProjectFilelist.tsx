@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useQueryClient } from "react-query";
 import { File, Project } from "../../utils/types";
 import { DeleteButton, AddButton, UploadButton, RenameButton } from "./Buttons";
 import { useFileOperations } from "../../utils/api";
 import { isValidFileName } from "../../utils/utils";
-import { Check } from "lucide-react";
 
 interface ProjectFileListProps {
   project: Project;
@@ -122,7 +120,6 @@ const ProjectFileList: React.FC<ProjectFileListProps> = ({ project }) => {
     handleAdd,
     handleUpload,
     error,
-    setError,
   } = useFileOperations(project.id);
 
   const onDelete = async (fileId: number, filename: string) => {

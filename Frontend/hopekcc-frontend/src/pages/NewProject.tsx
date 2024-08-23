@@ -104,7 +104,7 @@ const NewProject: React.FC = () => {
           description: projectDescription,
           auth0_user_id: user.sub,
         });
-      } catch (e) {
+      } catch (e: any) {
         setError(e.message);
       }
     } else {

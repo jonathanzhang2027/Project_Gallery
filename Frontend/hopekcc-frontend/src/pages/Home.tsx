@@ -6,7 +6,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Clock, Calendar } from "lucide-react";
 import { Project } from "../utils/types.ts";
 import {
-  Button,
   DeleteButton,
 } from "../components/projectComponents/Buttons.tsx";
 import { useProjectOperations } from "../utils/api.ts";

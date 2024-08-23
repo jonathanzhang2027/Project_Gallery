@@ -106,7 +106,7 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   
         const modifiedHtmlContent = activeFile.content?.replace(
           /<img\s+src="([^"]+)"/g, 
-          (match, src) => `<img src="${imageMap[src] || src}"`
+          (_, src) => `<img src="${imageMap[src] || src}"`
         );
         
         return `
@@ -232,9 +232,19 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
 
   const [saveMsg, setSaveMsg] = useState<string>('ctrl-s to save the file')
   const { handleProjectRename, handleProjectChangeDescription, error: projectError } = useProjectOperations(project?.id || 0);
+  if (projectError) {
+    setError(projectError);
+  }
   const { handleFileSave } = useFileOperations(project?.id || 0);
   if (!project){
-    return <div>missing projects</div>
+    return (
+      <>
+    <div>missing projects</div>
+    {error && typeof error !== 'string' && <div>{error.message}</div>}
+    {error && typeof error === 'string' && <div>{error}</div>}
+    </>
+    )
+    
   }
   useEffect(() => {
     

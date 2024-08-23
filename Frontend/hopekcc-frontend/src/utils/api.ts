@@ -434,36 +434,35 @@ export const useMultipleFileDetails = (fileIds: number[]) => {
     }))
   );
 };
-
 export const useFileDetails = (fileId: number) => {
   const { data: accessToken } = useAccessToken();
-  return useQuery<File>(['fileDetails', fileId], () =>
-    api(accessToken).get(`/files/${fileId}/`).then(res => res.data),
+
+  return useQuery<File, Error>(['fileDetails', fileId], 
+    () => api(accessToken).get(`/files/${fileId}/`).then(res => res.data),
     {
-      enabled: !!accessToken && !!fileId, // Only run the query if fileId and tokenis provided
-      retry: (failureCount, error) => {
-        // Don't retry on 404 errors
+      enabled: !!accessToken && !!fileId,
+      retry: (failureCount, error: Error) => {
         if (error.message === 'Project not found') {
           return false;
         }
-        // Retry up to 3 times for other errors
         return failureCount < 3;
       },
-      retryOnMount: false, // Don't retry on component mount if we already have data
-      refetchOnWindowFocus: false, // Don't refetch on window focus
+      retryOnMount: false,
+      refetchOnWindowFocus: false,
     }
   );
 };
+
 
 export const useCreateFile = () => {
   const { data: accessToken } = useAccessToken();
   const queryClient = useQueryClient();
   return useMutation<File, Error, { id: number; file: FormData }>(
-    ({ id, file }) => api(accessToken).post(`/files/`, file, {
+    ({ file }) => api(accessToken).post(`/files/`, file, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(res => res.data),
     {
-      onSuccess: (data, variables) => {
+      onSuccess: (variables) => {
         queryClient.invalidateQueries(['projectFiles', variables.id]);
       },
     }

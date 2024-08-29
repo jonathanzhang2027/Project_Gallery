@@ -1,6 +1,7 @@
 # HopeKCC Project Gallery
 
 ![Project Gallery]
+
 ![image](https://github.com/user-attachments/assets/6d78dd25-ac76-4e06-8569-4e29aad95bc4)
 
 

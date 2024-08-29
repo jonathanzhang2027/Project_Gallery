@@ -4,7 +4,7 @@
 ![image](https://github.com/user-attachments/assets/6d78dd25-ac76-4e06-8569-4e29aad95bc4)
 
 
-A full-stack web application designed to showcase projects in a gallery format. Built with React.js for the frontend and Django for the backend, this application provides a seamless and interactive user experience. The app is deployed on Google Cloud Platform (GCP), integrating Cloud SQL for relational data storage and Firestore for real-time updates.
+A full-stack web application designed to showcase projects in a gallery format. Built with React.js for the frontend and Django for the backend, this application provides a seamless and interactive user experience. The app is deployed on Google Cloud Platform (GCP), integrating Cloud SQL for relational data storage and Firestore for real-time updates. Full Documentation can be found [here]([url](https://docs.google.com/document/d/1DFvpC6HaP0BZCbFuoJSiUDWjZw581jH_6HWSwFUEGkI/edit#heading=h.gho0deaf3vpn)): 
 
 ## Features
 
@@ -36,5 +36,5 @@ A full-stack web application designed to showcase projects in a gallery format. 
   - **Cloud Storage**: Object storage for project assets.
   - **Let's Encrypt**: Free SSL/TLS certificates for securing the application.
 
-## Installation
+
 

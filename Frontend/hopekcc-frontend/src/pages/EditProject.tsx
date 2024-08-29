@@ -7,23 +7,25 @@ import { ProjectNavBar } from "../components/NavBar";
 import { ProjectDescription } from "../components/projectComponents/ProjectDescription";
 import { useParams } from "react-router-dom";
 
-
-import { Project, File} from "../utils/types" 
-import { useProjectDetail, useMultipleFileDetails, useProjectOperations} from '../utils/api';
-import { useFileOperations } from '../utils/api';
-import {mapProject, mapFile} from "../utils/mappers";
-
+import { Project, File } from "../utils/types";
+import {
+  useProjectDetail,
+  useMultipleFileDetails,
+  useProjectOperations,
+} from "../utils/api";
+import { useFileOperations } from "../utils/api";
+import { mapProject, mapFile } from "../utils/mappers";
 
 const generatePreview = (files: File[], activeFileID: File["id"]): string => {
   const activeFile = files.find((file) => file.id === activeFileID);
-  if (!activeFile) return '';
+  if (!activeFile) return "";
 
-  const fileExtension = activeFile.file_name.split('.').pop()?.toLowerCase();
+  const fileExtension = activeFile.file_name.split(".").pop()?.toLowerCase();
   switch (fileExtension) {
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif':
+    case "jpg":
+    case "jpeg":
+    case "png":
+    case "gif":
       return `
         <!DOCTYPE html>
         <html lang="en">
@@ -42,7 +44,7 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
         </html>
       `;
 
-    case 'pdf':
+    case "pdf":
       return `
         <!DOCTYPE html>
         <html lang="en">
@@ -61,12 +63,12 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
         </html>
       `;
 
-    case 'doc':
-    case 'docx':
-    case 'xls':
-    case 'xlsx':
-    case 'ppt':
-    case 'pptx':
+    case "doc":
+    case "docx":
+    case "xls":
+    case "xlsx":
+    case "ppt":
+    case "pptx":
       return `
         <!DOCTYPE html>
         <html lang="en">
@@ -83,33 +85,39 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
             <div class="preview-placeholder">
               <h2>${activeFile.file_name}</h2>
               <p>Preview not available for ${fileExtension.toUpperCase()} files.</p>
-              <p>File size: ${(activeFile.content?.length ?? 0 * 3 / 4 / 1024).toFixed(2)} KB</p>
+              <p>File size: ${(
+                activeFile.content?.length ?? (0 * 3) / 4 / 1024
+              ).toFixed(2)} KB</p>
             </div>
           </body>
         </html>
       `;
 
-      case 'html':
-        const cssFiles = files.filter((file) => file.file_name.endsWith(".css"));
-        const jsFiles = files.filter((file) => file.file_name.endsWith(".js"));
-        const cssContent = cssFiles.map(file => file.content).join('\n');
-        const jsContent = jsFiles.map(file => file.content).join('\n');
-        
-        // Add image handling for HTML files
-        const imageFiles = files.filter((file) => 
-          ['jpg', 'jpeg', 'png', 'gif'].includes(file.file_name.split('.').pop()?.toLowerCase() || '')
-        );
-        const imageMap = imageFiles.reduce((acc, file) => {
-          acc[file.file_name] = `data:image/${file.file_name.split('.').pop()};base64,${file.content}`;
-          return acc;
-        }, {} as Record<string, string>);
-  
-        const modifiedHtmlContent = activeFile.content?.replace(
-          /<img\s+src="([^"]+)"/g, 
-          (_, src) => `<img src="${imageMap[src] || src}"`
-        );
-        
-        return `
+    case "html":
+      const cssFiles = files.filter((file) => file.file_name.endsWith(".css"));
+      const jsFiles = files.filter((file) => file.file_name.endsWith(".js"));
+      const cssContent = cssFiles.map((file) => file.content).join("\n");
+      const jsContent = jsFiles.map((file) => file.content).join("\n");
+
+      // Add image handling for HTML files
+      const imageFiles = files.filter((file) =>
+        ["jpg", "jpeg", "png", "gif"].includes(
+          file.file_name.split(".").pop()?.toLowerCase() || ""
+        )
+      );
+      const imageMap = imageFiles.reduce((acc, file) => {
+        acc[file.file_name] = `data:image/${file.file_name
+          .split(".")
+          .pop()};base64,${file.content}`;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const modifiedHtmlContent = activeFile.content?.replace(
+        /<img\s+src="([^"]+)"/g,
+        (_, src) => `<img src="${imageMap[src] || src}"`
+      );
+
+      return `
           <!DOCTYPE html>
           <html lang="en">
             <head>
@@ -153,16 +161,21 @@ const generatePreview = (files: File[], activeFileID: File["id"]): string => {
         </html>
       `;
   }
-
 };
 
 const ProjectEditorContainer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
   const { data: projectData } = useProjectDetail(projectId);
-  const project = useMemo(() => projectData ? mapProject(projectData) : null, [projectData]);
-  const fileIds = useMemo(() => project?.files?.map(file => file.id) || [], [project?.files]);
-  
+  const project = useMemo(
+    () => (projectData ? mapProject(projectData) : null),
+    [projectData]
+  );
+  const fileIds = useMemo(
+    () => project?.files?.map((file) => file.id) || [],
+    [project?.files]
+  );
+
   const fileQueries = useMultipleFileDetails(fileIds);
 
   const [localFiles, setLocalFiles] = useState<File[]>([]);
@@ -188,21 +201,21 @@ const ProjectEditorContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const successfulQueries = fileQueries.filter(query => query.isSuccess && query.data);
-  
+    const successfulQueries = fileQueries.filter(
+      (query) => query.isSuccess && query.data
+    );
+
     if (successfulQueries.length > 0) {
       const newFiles = successfulQueries.map((query) => mapFile(query.data));
       updateLocalFiles(newFiles);
     }
   }, [fileQueries, updateLocalFiles]);
 
-
   return (
     <MemoizedProjectEditor
       project={project}
       files={localFiles}
       updateLocalFiles={updateLocalFiles}
-
     />
   );
 };
@@ -213,15 +226,17 @@ interface ProjectEditorProps {
   updateLocalFiles: (newFiles: File[]) => void;
 }
 
-
-
 interface ProjectEditorProps {
   project: Project | null;
   files: File[];
   updateLocalFiles: (newFiles: File[]) => void;
 }
 
-const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLocalFiles }) => {
+const ProjectEditor: React.FC<ProjectEditorProps> = ({
+  project,
+  files,
+  updateLocalFiles,
+}) => {
   const [localFiles, setLocalFiles] = useState<File[]>(files || []);
   const [activeFileID, setActiveFileID] = useState(files[0]?.id || 0);
   const [isEditing, setIsEditing] = useState<boolean>(true);
@@ -230,18 +245,20 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
   const [isCollapsedDesc, setIsCollapsedDesc] = useState<boolean>(true);
   const [error, setError] = useState<string | null | Error>(null);
 
-  const [saveMsg, setSaveMsg] = useState<string>('ctrl-s to save the file')
-  const { handleProjectRename, handleProjectChangeDescription, error: projectError } = useProjectOperations(project?.id || 0);
+  const [saveMsg, setSaveMsg] = useState<string>("ctrl-s to save the file");
+  const {
+    handleProjectRename,
+    handleProjectChangeDescription,
+    error: projectError,
+  } = useProjectOperations(project?.id || 0);
   if (projectError) {
     setError(projectError);
   }
-  
+
   const { handleFileSave } = useFileOperations(project?.id || 0);
   useEffect(() => {
-    
     setLocalFiles(files);
-  },[files]);
-
+  }, [files]);
 
   const preview = useMemo(() => {
     if (localFiles && localFiles.length > 0) {
@@ -255,84 +272,112 @@ const ProjectEditor: React.FC<ProjectEditorProps> = ({ project, files, updateLoc
     if (file) {
       setActiveFileID(file.id);
     }
-
   };
 
   const handlFileselect = (fileId: number) => {
-    setActiveFileID(fileId)
-    setSaveMsg('')
+    setActiveFileID(fileId);
+    setSaveMsg("");
+  };
 
-  }
-  
-  const onSave = useCallback(async (content: string) => {
-    const updatedFiles = localFiles.map(file => {
-      if (file.id === activeFileID) {
-        return { ...file, content };
-      } else {
-        return file;
+  const onSave = useCallback(
+    async (content: string) => {
+      const updatedFiles = localFiles.map((file) => {
+        if (file.id === activeFileID) {
+          return { ...file, content };
+        } else {
+          return file;
+        }
+      });
+      setLocalFiles(updatedFiles);
+      setSaveMsg("Saving...");
+      try {
+        await handleFileSave(activeFileID, content);
+        setSaveMsg("File saved successfully");
+      } catch (e: any) {
+        setError(e.message);
+        setSaveMsg("Failed to save the file...Please try again later");
       }
-    });
-    setLocalFiles(updatedFiles);
-    setSaveMsg('Saving...')
-    try {
-      await handleFileSave(activeFileID, content);
-      setSaveMsg('File saved successfully')
-    } catch (e: any) {
-      setError(e.message);
-      setSaveMsg('Failed to save the file...Please try again later')
-    }
-  }, [activeFileID, localFiles, handleFileSave, updateLocalFiles]);
+    },
+    [activeFileID, localFiles, handleFileSave, updateLocalFiles]
+  );
 
-  const handleChange = useCallback((content: string) => {
-    const updatedFiles = localFiles.map(file => {
-      if (file.id === activeFileID) {
-        return { ...file, content };
-      } else {
-        return file;
-      }
-    });
-    setLocalFiles(updatedFiles);
-  }, [activeFileID, localFiles]);
+  const handleChange = useCallback(
+    (content: string) => {
+      const updatedFiles = localFiles.map((file) => {
+        if (file.id === activeFileID) {
+          return { ...file, content };
+        } else {
+          return file;
+        }
+      });
+      setLocalFiles(updatedFiles);
+    },
+    [activeFileID, localFiles]
+  );
   return (
     <>
-    <ProjectNavBar isEditing={isEditing} title={project?.name || ''} onTitleChange={handleProjectRename} modifiedTime={project?.updated_at || 'NaN'}
-      onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)} onSwitchView={() => setIsEditing(!isEditing)}/>
-    {isCollapsedDesc? <> </>: <ProjectDescription description={project?.description || ''} onDescriptionChange={handleProjectChangeDescription}/>}
-    
-    <div className="flex flex-col h-screen bg-gray-100">
-      <div className="flex-grow flex">
-        {error && (
-          <div className="w-full h-full p-4 flex items-center justify-center bg-gray-100">
-            <p className="text-lg text-red-700">{typeof error === 'string' ? error : error.message}</p>
-          </div>
-        )}
-        {isEditing && //Editor mode
-          <> 
-            { !isCollapsedFileTab && <FileTabsNavigation
-              projectId={project?.id || 0}
-              files={project?.files || []}
-              activeFileID={activeFileID}
-              onFileSelect={handlFileselect}
-              onError={setError}/>}
+      <ProjectNavBar
+        isEditing={isEditing}
+        title={project?.name || ""}
+        onTitleChange={handleProjectRename}
+        modifiedTime={project?.updated_at || "NaN"}
+        onCollapseDesc={() => setIsCollapsedDesc(!isCollapsedDesc)}
+        onSwitchView={() => setIsEditing(!isEditing)}
+      />
+      {isCollapsedDesc ? (
+        <> </>
+      ) : (
+        <ProjectDescription
+          description={project?.description || ""}
+          onDescriptionChange={handleProjectChangeDescription}
+        />
+      )}
 
-            <CollapseButton
-              onCollapseButtonClick={() => setIsCollapsedFileTab(!isCollapsedFileTab)}
-              isCollapsed={isCollapsedFileTab}
-              collapseDirection="left"
-            />
-          
-            <Editor activeFile={localFiles.find(file => file.id === activeFileID)} 
-              onSave={onSave} onChange={handleChange} message={saveMsg}/>
+      <div className="flex flex-col h-screen bg-gray-100">
+        <div className="flex-grow flex">
+          {error && (
+            <div className="w-full h-full p-4 flex items-center justify-center bg-gray-100">
+              <p className="text-lg text-red-700">
+                {typeof error === "string" ? error : error.message}
+              </p>
+            </div>
+          )}
+          {isEditing && ( //Editor mode
+            <>
+              {!isCollapsedFileTab && (
+                <FileTabsNavigation
+                  projectId={project?.id || 0}
+                  files={project?.files || []}
+                  activeFileID={activeFileID}
+                  onFileSelect={handlFileselect}
+                  onError={setError}
+                />
+              )}
 
-            <CollapseButton
-              onCollapseButtonClick={() =>
-                setIsCollapsedPreview(!isCollapsedPreview)
-              }
-              isCollapsed={isCollapsedPreview}
-              collapseDirection="right"
-            />
-          </>
-        }
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedFileTab(!isCollapsedFileTab)
+                }
+                isCollapsed={isCollapsedFileTab}
+                collapseDirection="left"
+              />
+
+              <Editor
+                activeFile={localFiles.find((file) => file.id === activeFileID)}
+                onSave={onSave}
+                onChange={handleChange}
+                message={saveMsg}
+              />
+
+              <CollapseButton
+                onCollapseButtonClick={() =>
+                  setIsCollapsedPreview(!isCollapsedPreview)
+                }
+                isCollapsed={isCollapsedPreview}
+                collapseDirection="right"
+              />
+            </>
+          )}
 
           {!isCollapsedPreview && (
             <Preview previewDoc={preview} onNavigate={handleNavigate} />

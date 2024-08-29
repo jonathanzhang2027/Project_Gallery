@@ -114,13 +114,8 @@ const FileListItem: React.FC<FileListItemProps> = ({
 };
 
 const ProjectFileList: React.FC<ProjectFileListProps> = ({ project }) => {
-  const {
-    handleDelete,
-    handleRename,
-    handleAdd,
-    handleUpload,
-    error,
-  } = useFileOperations(project.id);
+  const { handleDelete, handleRename, handleAdd, handleUpload, error } =
+    useFileOperations(project.id);
 
   const onDelete = async (fileId: number, filename: string) => {
     await handleDelete(fileId, filename);

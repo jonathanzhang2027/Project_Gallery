@@ -5,8 +5,8 @@ interface File {
   file_url: string;
   created_at: string;
   updated_at: string;
-  content?: string;  //used for displaying content in the editor
-  file?: globalThis.File;  // used for transforming content to actual file
+  content?: string; //used for displaying content in the editor
+  file?: globalThis.File; // used for transforming content to actual file
 }
 
 interface Project {
@@ -19,7 +19,4 @@ interface Project {
   files: File[];
 }
 
-export type {
-  File,
-  Project
-}
+export type { File, Project };

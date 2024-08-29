@@ -1,7 +1,8 @@
 from django.db import models
 
+
 class Project(models.Model):
-    auth0_user_id = models.CharField(max_length=255, default='temp_user')
+    auth0_user_id = models.CharField(max_length=255, default="temp_user")
     name = models.CharField(max_length=255)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -12,7 +13,7 @@ class Project(models.Model):
 
 
 class File(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='files')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="files")
     file_name = models.CharField(max_length=255)
     file_url = models.URLField(max_length=2000)
     created_at = models.DateTimeField(auto_now_add=True)
